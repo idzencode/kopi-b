@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kopi B (#kopiyangbaik) — Interactive Webview Preview</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * { box-sizing: border-box; user-select: none; -webkit-font-smoothing: antialiased; }
+    body { margin: 0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Silky Diagonal Forest Wave Background (Fore / Kopi B Splash Style) */
+    .splash-wave-bg {
+      background:
+        radial-gradient(ellipse 90% 35% at 35% 32%, rgba(28, 156, 113, 0.55) 0%, transparent 70%),
+        radial-gradient(ellipse 95% 38% at 62% 78%, rgba(26, 150, 109, 0.48) 0%, transparent 72%),
+        radial-gradient(ellipse 85% 30% at 50% 55%, rgba(4, 56, 37, 0.52) 0%, transparent 68%),
+        linear-gradient(135deg, #09563C 0%, #0D6B4C 38%, #107C58 68%, #06442F 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .splash-wave-bg::before {
+      content: '';
+      position: absolute;
+      inset: -30%;
+      background: repeating-linear-gradient(
+        32deg,
+        rgba(30, 185, 134, 0.14) 0px,
+        rgba(30, 185, 134, 0.22) 70px,
+        rgba(5, 69, 46, 0.24) 150px,
+        rgba(13, 107, 76, 0.10) 230px
+      );
+      filter: blur(26px);
+      pointer-events: none;
+    }
+
+    @keyframes blinkCursor {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .pin-cursor {
+      animation: blinkCursor 1s infinite;
+    }
+
+    @keyframes splashPop {
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .splash-logo-anim {
+      animation: splashPop 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] p-3 md:p-5">
+
+  <!-- Top Controls & Screen Switcher Bar -->
+  <div class="max-w-5xl mx-auto mb-5">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style="background:#0D6B4C;">KB</div>
+          <div>
+            <h1 class="font-bold text-base text-[var(--foreground)] leading-tight">Kopi B (#kopiyangbaik) — Interactive Webview Simulator</h1>
+            <p class="text-xs text-[var(--muted-foreground)]">Klik tombol layar di bawah atau berinteraksi langsung di dalam layar HP (390×820px)</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="restartFullFlow()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition hover:opacity-90" style="background:#0D6B4C;">
+            ▶ Putar Transisi Splash → Onboarding
+          </button>
+          <button onclick="setScreen('uikit')" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition" style="background:#E2F5F2; color:#05452E; border-color:#7CBCA4;">
+            🎨 UI Kit Board
+          </button>
+        </div>
+      </div>
+
+      <!-- Screen Quick Jump Pills -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1" id="screenSwitcherPills">
+        <button data-scr="splash" onclick="setScreen('splash')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">1. Splash Screen</button>
+        <button data-scr="welcome" onclick="setScreen('welcome')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">2. Onboarding (Screen 1)</button>
+        <button data-scr="phone" onclick="setScreen('phone')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">3. Masuk No. HP (Screen 2)</button>
+        <button data-scr="pin" onclick="setScreen('pin')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">4. PIN Kopi B (Screen 3)</button>
+        <button data-scr="home" onclick="setScreen('home')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">5. Home Screen</button>
+        <button data-scr="menu" onclick="setScreen('menu')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">6. Menu & Custom</button>
+        <button data-scr="order" onclick="setScreen('order')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">7. Order Tracker</button>
+        <button data-scr="reward" onclick="setScreen('reward')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">8. Reward B-Beans</button>
+        <button data-scr="account" onclick="setScreen('account')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">9. Akun</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Workspace: Mobile Phone Simulator + Live State Inspector -->
+  <div class="max-w-5xl mx-auto flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6">
+
+    <!-- 390x820 Mobile Device Viewport -->
+    <div class="relative w-[390px] h-[820px] rounded-[44px] p-3 shadow-2xl border-4 border-neutral-800 bg-neutral-900 shrink-0">
+      <!-- Speaker Notch -->
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-40 flex items-center justify-center">
+        <div class="w-2.5 h-2.5 rounded-full bg-neutral-800 mr-3"></div>
+      </div>
+
+      <!-- Inner Screen -->
+      <div id="phoneViewport" class="relative w-full h-full rounded-[34px] overflow-hidden bg-white flex flex-col">
+        <!-- Dynamic Content Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Right Column: Design System Reference & Flow Notes -->
+    <div class="w-full lg:w-80 flex flex-col gap-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <h2 class="font-bold text-sm text-[var(--foreground)] mb-2">📌 Status Alur Saat Ini</h2>
+        <div id="flowInfoBox" class="text-xs text-[var(--muted-foreground)] space-y-1.5 leading-relaxed"></div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <h2 class="font-bold text-sm text-[var(--foreground)] mb-2.5">🎨 Palet Aktif (#kopiyangbaik)</h2>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="p-2.5 rounded-xl text-white font-semibold flex flex-col justify-between h-16" style="background:#0D6B4C;">
+            <span>Primary</span><span class="opacity-85">#0D6B4C</span>
+          </div>
+          <div class="p-2.5 rounded-xl font-semibold flex flex-col justify-between h-16" style="background:#28E5A7; color:#011E13;">
+            <span>Secondary</span><span>#28E5A7</span>
+          </div>
+          <div class="p-2.5 rounded-xl font-semibold flex flex-col justify-between h-16" style="background:#7CBCA4; color:#011E13;">
+            <span>Tertiary</span><span>#7CBCA4</span>
+          </div>
+          <div class="p-2.5 rounded-xl text-white font-semibold flex flex-col justify-between h-16" style="background:#011E13;">
+            <span>Neutral</span><span class="opacity-85">#011E13</span>
+          </div>
+          <div class="p-2.5 rounded-xl font-semibold flex flex-col justify-between h-14 border" style="background:#E2F5F2; color:#05452E; border-color:#82BBAC;">
+            <span>Ice Mint</span><span>#E2F5F2</span>
+          </div>
+          <div class="p-2.5 rounded-xl font-semibold flex flex-col justify-between h-14" style="background:#B3FEDB; color:#05452E;">
+            <span>Mint Mist</span><span>#B3FEDB</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <h2 class="font-bold text-sm text-[var(--foreground)] mb-2">💡 Tips Interaksi Webview</h2>
+        <ul class="text-xs text-[var(--muted-foreground)] space-y-1.5 list-disc pl-4">
+          <li>Pada <b>Splash Screen</b>, tunggu 2.6 detik (atau klik layar) untuk otomatis masuk ke <b>Onboarding Screen 1</b>.</li>
+          <li>Pada <b>Screen 1</b>, klik <b>"Masuk"</b> untuk membuka input nomor telepon <code>+62</code>, atau klik <b>"Lewati tahap ini"</b> untuk langsung ke <b>Home Screen</b>.</li>
+          <li>Pada <b>Screen 2</b>, ketik minimal 8 digit angka agar tombol <b>"Lanjutkan"</b> berubah dari abu-abu ke hijau <code>#0D6B4C</code>.</li>
+          <li>Pada <b>Screen 3 (PIN Kopi B)</b>, tekan 6 angka pada keypad di bawah layar untuk masuk otomatis ke <b>Home Screen</b>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Official Kopi B Logo Data URI (Transparent white logo extracted on canvas)
+    const RAW_LOGO_URI = "data:image/webp;base64,UklGRlRdAABXRUJQVlA4WAoAAAAgAAAAgwMA+gEASUNDUMgBAAAAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADZWUDggZlsAAPBkAZ0BKoQD+wE+bTaXSKQjIiEiFqmwgA2JZW78LLfoJn9AI2nzN5iZUk9/j7lEPfl/71+PHvcWn/J/2T7gPer4QdXeXV0R+k/al/vvUj+kfYD/Y7pK/vT6g/Ny/6/rN/qvqW/zfqgfR482/1g/3w9NDVZfnf96/w3ph75vvP9h/xn6++m/5H9B/hf7R/kf9z/g/m7/NstfXX/0ehH8p+6n6n+5/vL/kfoL/O/87wT/Nv4b/of5X/He4F+L/zT/J/3391/7jwvG6eYL7bfW/+r/ef8n7iH1X/h/wvqN9pP9x/iPgA/o/96/63999xv+n4G/4//u+wD/Q/8N+1Hsl//n++88v1p/+PcO/nP+G/8nr5f//3Nfvj/////8QoxfKqwD7d/zssqrAPt3/OyyqsA+3f87LKqwD7d/zssqrAPt3/OyyqsA+3f87LKqwD7d/zssqrARgVCkJLQqYZsB9u/52WVVgH27/nZZVWAfbv+dndRUwzYD7d/zssqrAPt3/OyyqsA+3f87LKqwD9cQpCS0KmGbAfbv+dllVYB9u/52WVVgH27/nZbY9u/52WVVgH27/nZZVWAfbv8vICKNMr2E1kZa8de8zt+hmmqZ1SmIl0t3aYFYT/TDNgP1xCkJLQqYZsB9u/52WVVgHyKLay//zyaP/q/lITCrxVRiDkYjU/SVOmgecdll5NX/nZZVWAfbv+dllVYB8iiYDvL//eETNQVFjP/uoogMTf9e4Oe86n3Zu+ghmKAdH34Js5gfWGJpx1ZDYIX5qGcnwYrLPMK3nZZV9e/52WVVgH27/nZZVWAcUU8aWQup0ahnZv/8qmQjgsqiTWv+JKF12MKfDhdiRnUGOPFxJ55DIztQxKLvqFCYnKWu3bZhWmM5l3lIhzQa7P674ZPFO3NzBiayI/WbeS0LEqkHktCphmwH27/nZZVTDwQ8v5wpnxV4z2+aZ9Vsnqymf+pmxDxVXeTG75SXgv13mqgXUQcBan5k28Gf//6+Qr0iwDgj/MqcK4gvcyjdEfhx4htXxsvVv/Oy2x7d/zssqrAPt3/OyyqlutNspi24jcm4cy7Lyfs1ysWCVU+vsHZBPFHdcUUVvo7kzU7RMpNBCATYwDwOoRAxYK6E6+d0OTWVeflSGtVXnYPhu/52WVVgH27/nZZVWAfbv+dGiMdYJ1tkXsPZgfP+mlDaDCv6kgE5DZoabjJ9GbZjBI4yTHH//DUUcX8n0/Pfqvlobxb0JlzTGEyG7z7SWVro31Ug8mWqwD7d/zssqrAPt3/OxvvPYO11xIyM4H/Jp0XdbGmX/9oeNmyc2DQTkwP96/kDcawr4hCWYiXQS5b7yMy21TfsszeZascWIOqcB9vBM1WAfbv+dllVYB9u/52W2PKRJuWxWwVyQxJey0u+MrDFz6bB9VqRnvs5ck5ADkC8HMkEKHi5z2KFJpMM2A+3paQksnFIu00etlxkavZbUVqsyNBzVrKHHqVwdb3TssPgkAIdD+8Q2q5ZDfH4nMZhfZJm6Ec1OpPxL93hYSFtlYSapxH8dm2am+6bGDRcUcQeBI4ZWIYzhN7GS3vtqDs36p14YFV49u/52d1FTC6c887xFrO3C4hE462nk9jUje2PfYtp1u9qthOjS4dLP7qNQdNDdhkDu1FUtrLot4POdXU9rlbymvTuBS+QEUNMHpUL9gHfmngWpirJc7ER1x9GQngEMx7vWXahdLXCdC+IOXoIx7yWhYlUg8bcSBzhYf1mvHoyIIgsLqCH+t0rLQrViUpgGyi7JwoNAw9KwIWf3v8oQz8B4iYaQhmH54s3wX+yn1al+glfrL50tYQASMv99TP0jiT/jclnoSJ6k1t4VGgC4PYzauRsmqWZIOE6QhNHJQN/aqHMHNkphS+fzn5rt7QrCQzarAPt3/OluUu/Kyq52zRSPngUMXJuj52jAp5krJlcGFelq/IgyM4LRCKKDSkdzBVCxlIkpeByB9vCluXjNGoSTfE6inau+Jv0k6huIv3bQGRiJDQCZa2kbA2LuAKD77+CLBFBFMmOvvSWEihvK1Ndx54OsLWgQ2ACdZ3qUhJlqsA+ZJeqgBCoIOpY0ipvxM6pHKYuza1dwQf/FrUkVSzt5+UPMSu+lAxj4XhrTaSITn1d1vYYSOWRGRSrUbOg3xzuZO020tucUqJBna9OQcG+3K4xvdEEfHFuGqEyiG1tRfyuHExTJbcgqYxZjheVm8bcsCdXaBioUhJaFS+6TW73z5QAg6/MDMm0nihZ5H/4dX47w1O2ohjNu+DCdZFggLBgHO+82BP3YVmzaVhPtpNdTgISkMr2rroqHnDZqvz5GxbojlckISY4FseRoB7F86wkwoZ8Fwi3Erwd9/rBtP4PvZ8T70D86kWRIxYipTfIEgAa40sPytocJpbG9s48wg9JCwURaFTHu3f8spguFtXH1uBKYhnCkb9d2umoFApKMC+TfQcH1nt3uKWl2eOfA40WgbTO0aSFtpkLUkQ/NonAQ6HsinQTjbniV2eBBO5uh9loodiIRZq62YC9FhFX0vw+Rz3FhhWaNVdsoD1RahdZbzVS6NXvJbcqmJ317aBEcZxR1Tp50HM84qeVYB9u/52OO5UFbDqIzBiLBtA5bm8PwCBXhY5t5fiI9qF2srbyDAy+4vcX2NzZxaArd0H/IiJs17Uts3Hwit9W+m6BGG0ogCB+8RYLN0jI0No9Eur6nEQ/k841GBvi/TRQthrgUJqVZrQARtwhuKN5wRGCo+DvzzeAwSdC+nlfB1ECman9nxqRvUtvZHZ/XCNiS0KoL9u/7dJwrXciw6fCieXCEZY/PmnuWEjj87yix2iXUxvCRmo3DYnXuSDs2EtBPvGUQEWO6SO8MGtsBbVJUD/5txXfFyhT64M7hiTQHmb7XxcS9mrZV3xi1zi5NuaE6lW5fKhJaFTDNgNhhA7ezBGuhuKNoBRpse8uNwWKNn+uRB2levXTpG59/Jzj2W8FAEH+ac+34ACXZL+TwP3MC45ouXqC8NDBBzzrycvzp2Gw8VViIG3jTZG5Q9kZH52Yk8oQNZpJOHA2215ZXQhVUNksTQAhrTtbHi/WED8+5rPyhRKTQ9msn9UR1j1DkORt5fddXOYQjAi+OFASsJ+/6JqCo7TfM7AWC87bv+dndRUwtZNIs8Ae4paCyzPjQsZTVOfup6LzA4hqoJRX6gvgdyxQebHxaFEIrrybjqZwA+/55NDtWwvQAykrPIsaHY6hQzdYki5PUhxEAP0orKbdjKPfpvaUIsVN/mqP6zaSovhb08jmn4bACdZ79VZ4nJzlH5Txqe2hSEeVyI1IFSQo4caoFF2mJ5gQNuQHQccyrzcPaTic47LKqwD7d/zo/P67LQS0XpDXooIQZyCFw49fPNxcyhsOFEEDQLrWEgsgWzIu3+h5dPlOGbvdIh/LqbZ4h3FH96nHdlfG0kvrvewFRszFbKe9yhhBwwhCorhbkXzW2XhPsNjuufK+VnXP2m1g04akdbo3aOsczwFgRzHbsyML5Wphi5elbYQPve6zst/gCyynUfdDAPOmrkQjolQX8Esa/gPt3/Oy2x7d/0/rziXTj+uxUXSEX6d4skIwXi++jpGLrAPFlysD+CACjZZVWAfbv+dllVYB9vCAg8loZ1hAqYZsB9u/52WVVgH27/o9sB9u/52WVVgH27/nZZVWAfbv+dllVYB9u/52WVVgH27/nZZVWAfbv+dllVYB9u/52WVVgH28EzVYB9u/52WVVgH27/nZZVWAfbv+dllVYB9u/52WVVgH27/nZZVWAfbv+dllVYB9u/52WVVgH3EwAP72vCR57//LufqR+pGzYAAAAIXQUAAAADuLgAAABd7IAAAAehIAAAAKHZAAAeLbXbzFgsOB33WwX5mZtHePW3zipsXa+cES7KrtYnB0UZZjCNdFCfR0XXM1dfZ6aSABb3+N+AuLp2f3A8anJJ58OKqzeMhSkW5kUM9q+oWUdxpINMPp72XAObWuo1Of6GLpCNfKkYjo4RizruD4RfdhXUwVtrwA7THoD0474k4r2VjGsC1pjF4512vGHZ2V2e9JIoLVwk2VCzmlU5mjDnpEigUQFAOod+z2EAxisJt3RbK7O95/PT+u48a5ahNr7df1ZguQzxMK9nq6n97w4xenfVnxcrCZN6xgDZJOd2h8khzLw4yDsJAACWAa15TR2WXmySaaKA8r0hhVNYi+P+KkgU8ptvdfFJlgJGdPb2L3u8xLx0mAyDe2RG9g7tF5nac+6qCewop/gDQ3MEmWb39rAowKg+jofQBDdu33MP9lU8p4aTGM7o4QK7sTavux8io9P08I77mr2DZohCvQ8Sk/IwJb3QM8DzdhFbTA1nR1LEmF4nOJDgsO9aVmC8+9QqpCXdbTf0OszOYyEzE3fa9Oo13RFy0rzUClKSvo41HwmU0Dhqnyx+aqSsUOcZgP+nmeQUZAABwMC1n+ySQRaulnC8+iABVNVeWh95+wWFwoONMpWyRLJCgdVLdWSYehPiYJC/MuFlxOcvxswiBkVL+Q4P64/0IsgxpEQnsJtRAMA3SQMnC1GPn8SmSMSc1NjaVh/+7miGpLbTLLUgihWNC2QCuyzFNazAAAsgzbLuoOMFdrCTstk6r6H+0PqDGB+MvSP5lAle0g7woyRVNQ2WwcSZunXIwhtSS9l/iK+crHUWP2zPTfQvjrkvCLqS6fSDUIP7fXeRiW7ZM52DcoyTvU1BNLyJB/EyerXQnXy0zDZWomnyMft8DHNfSDrEp67u26HqYgwM3UboFLKLI8JDNsgn1PoS8bQ9SZENs7XxzRNU4BCvMh9N1eJbtHrTHT/N9+DYJFa9tzrpaz8u8wRnjdUllTOZdDPlaHpkJeKjTuF2aVkA23m9CFY0j5mcAkgxtsRvi+u97Ns8+S2WLbCecPKkp1R3uOxtBAr7F1UIPTB6fZLev0s28LYXL3vEHkCr7f+FcGRjDHXaeeeprfWpWNzM5TcRwnD3AutLWLZxWipArU3b0wrtMirp9s0rMDOrKr0C/XpUDT8T+PmkZmIznwR6BNEfe74mYbM02SSPdP6G49a9zRtuogFKjST1QLFwGZtwxqhNLMjS22RHNPflhWk8Xg6rx+SF098Drs9cRytU3zyLg3i/lgkM1jyrmO0X8wdr5O3B01rlx/d7DHLfT5AjAA8R9J53C2ot5zIpQgo2W5I9t2pD1I9h6WeShhfEOheqHObhPn0SFsvL623vkrJ+nF2T0c93x+ADt4ln5hCImZBEH4pa0ZT5kAAJYN3pvnlPUCVgGX9haA80WiIHOyyOFDEu34FXSd4dMYTAyhPL4IGHKvmRxWkCMQ+xEeJdXJVqBeFph4z6/iwPHyUB0AqKjINvbYBIBGGojR32rJOZPBcOY58gxp/y/u9p9Kr1JaWnXml8fCNECq3yzqnL5RYp8/4DD27ri5WW++3BK7xf5XdGaaCgS6WkRyfX0lLuOX+JidyYfd4H4b6rF6oYgFU5tmpw5FdJK6W7NZyG8CTtSb1YYtd0mbjda/YyiuP1mIm30MGmERRc5hY6z2iZazKgMGmegv0TlBMSiavyeN1xu+LvPI9GBGqKnuTaakENt+xqnSJpSPLd6mu/UMq8tdwKKvKTbYiihRYVvmahaBKNgXyxgfG7RwsUA5OaFPvSB7dEnemxI84vA6hyr4HGWeFHQFdFXuC01UOi/uHSJtF2Q3ePFU7CQqi7EVtoHH2qGJ4eJlrMGVjN6D8cX0c/n238PMZDeD3DXoXeP0N62bvy7k05qXwDbke9EQwnOZ+ixTiP+yTdT91TgWlm93zv9iqKyh/4MQUUzvvoI9BYi3hF5tsDurCuBXek+MEiF6RFRch24uZUtFczXE1i4+EqRLR33IF3FA92zc6UPD2E+QFTKrTzv7VdB5JlzFXvv7Icluc2PfRJ2v65aqAwHj1uovxVC0SAxIHYq1Em2fI9Mz6WQT4fncvl8PYvOgBBtse3SvEN9wh2x6ZzLqhe58EcwkFWt6vI8LkR+dGsb2FdV+0XNNMxaNEl5bYSayg05+F6Q/+P659hdqCfQqWlnP/1qnpIJOJAdManfhvaU/Jrn/PQOzBgvZ1T0ZDYInNP9myAljU8Zgxk8y80aXxE8wStamK/HlC9EQhRYH+NDxyweAaPWQ1Lrcczp40fATlqtQYr/6ViNxVnIy7sHGn925Ug+xc5QLKSNEI5B3v/4KD0MqpCy1O5DalDetxaFNfGIOKdACUMVAgeozx4mmYu/rFzIvj96thwVpc5sLKech5MZei1wpZJbYx9XZvYduyKtXIN9jz57P+RXXjuRPRJ0Amo3Juwlw1HG+4GxtHUeZJAvR+nUiP0cuX3DieplvJs8kV1Ba73PZNNvwOx4djBzD6JaHPmXFIJQJ8PYlG+6Sz/E/YD6cZJYltV6O1XX+9dCIUajFcO96We+W1QTilpcYBneG+0A1G5mPoEVkFuxn9AiJN/a5tdSBqDYGKhltdu6sUJWg7DdJH2Yo6r5FsLiq+A/GOfhjsnZgVc4XV1tsm3qNzkPKlIFxC+soH3sPhFoK1bXNlXN5UMZAAIPukdnxTb+6+OIEC622zo+bjlV4Q9PZvt7tUO4nIBSylYmQQLbi6nOF//JfLgnagAeq0KPuIZI4JUQ0cpD8TAHMOMe2irXzl37SRZj2gGi2Gh9vHR02sX73eV0nAi4ayNWf4GE/Dxf4UkBLRtrmxotXafA43w9aLp6X+2hfJoPQm9SUh497seyS3yMjzTqMnTc08MyRg1PM1kFpJ8F2+QYv1KmzU4GxxtcYG4POb07NSH9vcK/MmiW1MWVxvnTSfxNIaL7xortDe3YI0Ecws52+FA9lMssqray3Cu51xgz3L0oDYoaQ0Nw7qYkUsLzgipWY0MeS9IPyvXHCwPGWH1E5b2iolEeeTrRqG6fZDNqkbAYq1enZg9H3ML/r/zJXvTDpFz1b4I1WpF7vkc8Vzhzwa7cQT5H1Hseos4TV8+aCzESOebar/JFb3NwYbgWg2c7Ul7SPxiLIrgnl1WlOHhelWIWmvCcmqMVHYk34V26lnP7iIYT9y8Sj2mDTIwm25zoR+mgYcPCt2O15eedvo1yWGPznRR+3f7G6jR+tpxWuoTnG4LJo2oM2BmnOiTB31GGFc3c/+wIjyx/1gEwuwnHmVYbjnqqDE3b62xipyEWt6yZdWF9HVRIn6d5cyVGEKa3qqWkqur/d9mXdBkD1o+sJjZMtMgOmusziX5pJdorbLCqoo/oVpcHQ28vl0YTX4+/LYd9MNR2FO5VZqPUvYHcOGp1bdzaOqCLmQlYIY9S7eNv7tdp6EOUHOWFlqXV/72Bc/DKgh3F0TzlH6QUTuSpkCr5Fa/IOZoA+2YlcnkkSeVJ22a8JS2pyJlXI/7VgScgQRAOqBrAPkpFcAIhuAAhoRW5QUuYdg1w8nrxDVDHBpwfpX/wGZV9mb0xs4pVitQ5EKWz+hmImn3MchRjOgAg+jqakDJXajE3AMh2X1FCk8DNPzowZTL/u84WW+UB/tmN3KCwZErPBlA69CqQ1aXQ8RKidNSgdjiNKGLVNVpaQecZJg2FkXlt8/r6ywRVj7nD5X7ms5SXNV4jcbGKhVO9CTz7ZwLXlXCHOgdmDj1bZ68pOkqc4WxBmzScvxYb0jTsu7mP+F59bbPLX7sf5vaazNuu8kAAXtkzUnIvqkT4Di6/sr/bQkkIE8l4jQUsUZCK9TfW7/SIEr10udCdz4U8O1G5fi/U+cZRrzfrKwrAV3eNsLhSDb3vtx8r37WsxKrjFTSIQXJF0AGdtFUVX6npA3JkO9Nlg00Ts6tEqExIHVFOJ73QD2H5k4vnQ4CUF36YyPLZNMeYujnQOWBLR7/vg38Cz1t5zdyNxwrqgU4CwKL68qdGsPICyeYYJzGbcZiSaKw0RkodNMgWR0q/5/3mCG07DPvwnDyL+Ca+SElbVz2jK2FMImx4yV1OM1iJ4tnW7KQBAA8qgMQGqjSr4GsI3nkkpnvp2Z+3ExGmVEwspaVA6v/yo+IbGb8nQsKJytB/HgeaUR+udBAVT+zsg6KFSvayW+CJput/xFMw1Z7w/WejWKtIJr9k4IYB0fgStzkiJoLYaS8/SxBkt8O8NIEMDpAzUJW8QHHyAT7vFooXp+JPthkoHoEQ26Q706Z0ygkmpfo/l+qcyV1RBN5zm6IHjt15VsqHow6tehM7nnJroo+PDLNL7UeFTOFTXgkF2Gy/lCRAHUwV+7p0L/kq2EXAcifdkciPa7XyhT5aWb1neTtJZ9me87ExpVl8AiNqxnCP42/becIbjg1GLEs+AvZdBxKE6hij8UOBFjYCuZ3UsEWiN1Wv7xqlMzO36Tcz3Hffrs7DPyAHdzSgE52WeXvJcGr7rIFYlLhXJW/Px8uREi9k2DVC6T2X2X/eRzWeB9i0Jy2kW1wSSDKB6JldNYl4CNXMOuGNxos7xZI1NVeONoIBXQst99ecF8wNNmv1pBTmKZrJ+PWLfcy1dtvLbPTyVGlVsF5QjvW3dTBTfRjfr/ziUXqrN1E97x+YxXIrnfVos8CmYiEaRlUaLMVA7+E5/5v3w2pl78mg0Tfuq8lMIclUvlsNINf/vPT8KhWf4WDWDL7is3TEuMzRD9mUTRlVhEcbDSFP/yhY2GExLaDasmSwCcKxpDtRbW1u2pCXT45SaAXXHdhqcWd3UTfpSblr2J4cIYv70sx4QAMEd2kBbSNnRF8B1/MdeAIkJFPt6qVmdPdezQj5cMbBUbyI3DAUH+6nLWtvcZmk39SA7r0Fcy58vipyAyx3sSMAb0iMHxWkSriqLeWoe+WbISEvX45g9rUp3MtHe07lZAOWhS10WRMKlQ9jau17xV3x0COwnC3zFS9IkEGVKmGf9ikCAtiTuTzBQ4vXWngcpMlB8tghaGn5YA/ZN/0bJz2jA8lI0li/wadBZIxXKONRQJ6aXYeUENwGYvctUPN8IHweopnd1H6XxYHJHZycicantG5sO5xUrbo+0QIuPXrw3CinnETMCg2Tq4aRedZ5OuhqalZYGyyk3eusa2RFIuU74IRZIU6iPhGfhu1Y51NTN2OXgw36WdCR+ncsEKbxt9B2NKgKtNKQQPjIu0KY3YRuH19U3ihHq61Uafg4+RDA10SDBqPoPyLrd5VWi5/sVx8a5cBI3xxjIG6Sv8Gg12XATtAtdIZRD2m2EgiP1m05h/puKXEPwUrpOEc/sB83oKtCuZCusvPOO9IvYKWpFg/IdlETW3PYXh1LTrKF/becfhAqnDaCdyT51SeK762c2GhTJcoPswE3AkUELACH1zo71Dfv9QTQ1H4taGGuQ4Tmhtz4MQZYGjX9EBZJYzv4guXbYnfoWsr5G0J98rs6TRRwxaTpHDtvShjUowbFgJfLX7mZ7LICLFDd1QP6o3tTcGxOchII8pxgWjrc+AM2pew2MPxc94sYamlgf7ZGfKpww4mmL/ODEqETexoit1SzzVrMWOv4wazGcZoNDy9zrG6hEavtePwoRL195E3CPmTfSdyfbe3qIAc95xXQao6vQ68kgQidwU9nV/lrZ/KKgzCxxGZ+0xTq1FsbChWPBzQtjPOGztnUYfKwyismmxtHW0RZLip4tiq+IpDNV042+SUlWbhenXukXyF2Ba/az+3xgGkUTn4Nwf1D5SBx+fUEB3YAAAITWt64AWsJurxGSPEEnEWiXGsqSxyR4jbZUx5fjBkCwYVxS6dT9iNREzgael+hQQ2ic0LmJP+xy5fIR1htNuOCi7SyT2apF6bzy2ZAITfjRYzHstLoDyVkSbameScoAVcqvF80H5HouaB4//F54BKnvn4kAn3GoAxdOQ06lLZAXe9DnxFhZnOGUzI8Iy1IMBK8gIRFbFumG/5WkB2dM4ljsBN/kaq93cZy1ZViD2i6NzX+cqEvXB2pxAgDQ5hSGCBI+mHGuph+MLP85PHFo5HTe4vlj05Ve27eL+UkXF12oudnrjBSeyh6Y7lh8LNH797qTzDQZKs6Q3CSozz5GYTGiGShuSc3EZKX5+DsfTR9qiMo+7ds0OYiUM8iv0r6Gc5N5hkxcjjY85qMDnZOFYoGqqnLfWlLuwKipE5lqHe5b1GagscIEV5yIZDz6rjev3WhyXuhwm1ApeMK3CZOBre4LPi1kxAqF0gnX75ub+5FtSBKNm3m0u29dE6/KhIzsTaXWlq4nMJhvtqFOVk1UbjXm5pp7mzsJRmc6tCpRPqwBuPVMugCxlmGkmk3pTSxBrdhT3tg/28l1z66jBM/S1+Y9LtfDXrVdWkRgplvCIGyAALfmaPsSmV/zeZPG4lYGhK10J7itoFcqMo1MuSdKqPaXFZR+JE4mhcy9ue6iP4VDBpYBvwyrb6K/ILt3LBsXdh8RzNIHRYkvvP05wLWcisaLp7bE87Tm9/Jo4sVJfQuMHaaVl35XFLwASwLaeJ4YfPjxzAOg4tKRLyAr7EpffQndREhmqFDrrcuBTajSgzGEm/i7Erud7C45Vcys5Fadr2WzvQDcpXlqkv7rx79RJ0HRuY7Cth5ZHlANXgbAERIoLihSaHmIOjGIs7mawUYL5nXL0F+PFQbDbIacKaVczam9dgnF/JytYJ6UE4/bIqRfg8wJhVZTTK38RXm/qUwQ2wD41orGiB49ecpk1Q5NuFFljypRbRQFfNwuMRWQxNcXuH/bN3eovQzPJ0Wp9urDA5oRDOjzVfehCkVmolGRJXAKUdO/rzmZPcJm/jn87z61Qh3sq9KmsnbccP97CtHGSRtHAiH1XDfDingmlRrdfHiCYAbSyaBNMLYqDRWdkyijkP3d5Y/rHbGMXqvavY1UoV7ObhD9WedhZbVUVd+wV59hlAtjSTMI4ssyHhAbL+aSaTtwgHp2ghp75DPZh5F8Mb/Iwg98Jy4Ki3QdkVWuN/aw4pCQdpoCuK7uksBuBdt+pRTKDyHYfSaK2VHGH5o4L/5I4IJ64kKwVJdcCjRO76BdUQ3aLHQyOHz5KEzJbJD7L9ewhaBn/PT4Hw0ACyDvAASD1GqiR2wytpB9PXcONYBSjCZ+DwDVKP+aijGowC2Mm/TDTn6xy1rz1DIA6pw1vgWKkk/9SGqG5e2A9LuruyfWcO1e4Mk3BctdCRUzCU+2+S7AA0avmr3OSOc7G3X8cKV26xAO52uPGTweJMKi77sgRp0WmAAA0oCW8l6ITEREmAEWwQjHe8Gbq085AyJV1ybzoc4KbrB5pKOmiLCZvc1jpXxVgl1BkaB36zfyBBbuJDh8RbjXuox6cEfKnH8C9/LLfMpib9VxRBs+V5o913MUy0l8iV0pw4RZKqsKGe7mKXJQgb68JE1bkH9buAyZwLNi5F+Z7+6L/Ze73MkDzfn8m2DX4r02kFnmhm5Drgx/uc79y1TH1RlA17NiGkS8wPajiBGEi0yP8DSjupDbxFbE13ySJVET+YFge6DW/Ra7W9O8mm5TYwAzYuO6OxUHm8JgHcMiYTsIo+bOEBhYbLsvE8epi44AKnACPigG3FieYhqFQZ1okgcuijAPTD1Pex5rCigrApm8uETD7s6/IBrsDp8oGDewL5u/Y5kl03MUd24ayvIxMr4t/tYnkNHP1GgttwljVXcfQMjexvYvAngXRvPV9BipFg5NWszS6V4p6AZ+dN2yZkwEhv8bmQaH6hLegmps+LhzySpIWEgmADGJA9AMzuXzcPC+3zePAXR7RvgQTNT/7PuYlYDvkhoOGmKZO1cEfJEmzGK19JRVWrfBIGUg01OvjofhqgRNRVJF9DN+kZmFFhpZlTUQdp4ut6rA4bdE8BqrwC9BDhNdAWYl/oN5jE0N15JYt1Gp2iB2U7TKit5NG32T33OSPtjZQDBZoH0slAJAyXjN8KfIekGnmZlvwEYF6xql/Jv0R3iBH7Aw5gTg10H3tBOcrK5BkFpswfhxiV67PyHXLBNNPrhqLChsQRag+MjhwEg5hoqdOdwqju9cCGkf+MU661ujlvcN3WtQBxK3SShzjRWGwdGpGxYAgfSgt6idC1YyrAmsoZ9CgyeVK15WAexY4SnO8trmSHAPLIXuP5AQbEu8gus9pnnmeUleINIBXAoPwYeqAmum8kcYu5iIOGLPFLmYEWo2w9QWrXtZnmTwSpEy5kZkObvKXiBhXq/ly8h7j9VifTwyoOMtHFOkjfgJGTAkjuAZ28h1U/hKl2alD+es299iYpLneeCxVKfUdA5PriRMZWpdy5wKstBLcZJBksjX9oDcqNPIDgt3QljNgBfUltE3WMzI0+i2n8MDHWVqXchthV0Cu9gKewAGgB+POzmsgTy2OEEzd01mIYMBqhuJxpEIHzG4G65X4X1AxjYDfVRcYSQXunF3xrxool9mwFmvYJyVQyDYGaSp7oAdzRWBJAJZQPkxHl1xc+9IqFW+GZwop0kB7HO48ofdbCu44W9kg1sP3BgoupyrmwckBS+I6vrpNXrHURYwFXx9dBn/AcWEFvisThXj4weBGCTT9qlf3lGzlJ73JvMImGwQgbIv+qBGfOArCFwKbil3wjyfC+Cs/KttQiZxCCg26Vb3/CkAi3jaXqYGMHkv9ke2/ebqBXL9XJ9djnBoTCBoISoGAKSgD7M8TIynxuTgamHUbv0ps6Sh3LYjjY8NYPAnSjUcoQ+C5eCVoEcTXlQtt5MTJcYd/9xLPAtjbNbBoC7oUXUEgJnf9PR7Ol0Bf4wGsxtTF6V9Xq6xaQqgDpholDm8GrO6Uhva3kGViP1HizmDhQWo8qfzdEVkMl/gh+QVi/kalrhtq7YYtzluJWl74uLOkrR1C5FQNYOUJxQJqZnc8apH6qEMbNyn7jyKhYmHsTalbc5W5cUiNGzcD8kcnePYEN7X/L8mV+/8D8fv5l3IvhcPFBJpIsq6q4NfM0zafaruAgfSxLN/FlCWYPNJOJTD6y14kYbQwFptEjYF95NdBx24pnGJwQAdPxnjNbnE1Zy8Ys1NOqVwcTrnBdnXUKMkHT4GoRz6nE5pp2cQxsUWupWfdjjpF1LNfHtmmxlHaIpeGYV9n5wYoYDoP8JYhK1WIKnhYh8RrXWRdztmQQSaej3XaiIQPWdgeHiLo2O6gfUiN97LUXGTA5VP70ahsatSKArz42+5z9bc/C24HVxLWoVqMdW354a678ZY2SoYDYStQLneyofFPAOWdY4nA05WuYYA0W8bNoQB9iOG7XSy4EPnRbY/K87F+O6T/mxvwjzV55mCNtK7Zb0Ltohtl+bFjTOd7smB1Ps8tmUeFFXtUQmZ4UMKBOqFPH6+OAApRDMFrnOiD9wY0b76M7Wy5L9sAz54u6UUcxSsJPhnvR1I02hoRjD6rW0qdYm1GmBNozMuBBpGiVui7HknavszyT2Mk5CS5oysv1G0f7eRogyRuuHbimaOVqCcXCKwbgVFNluoV6SIPDc2qRMpcritlsJtIfX4L6RePacRXiHlPa8AApgvvVX0/zCIeiTzEwxK0LlY2lAG252cVI+kJ5ipch/TZhAF0n4md7y0c4xW7gzhth6j1g9ZCAAdpjIhx9QYxGDB+h94Cg/FXHt6DqNcaSYAWG2fK8AMWZuO+ADli4bh0xt8fd6wAgJrEumeC6Xw84E9/8ljvjET0gcSRzmkDbtuQpbEu145YwAZlrnsOdKYaRcgDYdD0E1tW+0Y59aVpXCHFirlsdN+2pQDrbndUToA9T6sTsdHkBTZcgAGAFYIBV/E/E1drqEAJoZR9tkIMPqUk45PPYyTcrWZoJlQ4y8mR4sZ1dkDKXElYVZkjAn4h22blT8dbP+EPpI77vml4gbF+gkH2gBb8PRbN885q6Tf2K54ZrFdBmGp3Cnkr6jJCwQULkH0QzlwxZ48gKuaEPX9tGSTaOkdUcw4iCHusDHCglUM/tAFVvkQMJZz1jeehqT0CLkQUq68R40bVcFh9p14nP34+8tVOU5891qPVXyX3SA0hUPmRT2qM4dlLGF6BYsAvdAC/l2MOSS7KgTR8ib6f0bR8DNojonkk7Jk8GFQ4aNiXMLlRMFNsK9/HTMxja87HqmPpyNeA33JwXKDMa6+bIxTo8VYiHtcAN1ZYhB24yD2kt4mzHMkeqqbodCGLkU0ekUadh30WNQz+qBgX/FP3wbTeQ85oZe1veUT58tiGN0kajRgpgJQRTA3/INqdjrJ7RpOnXgR/seq1R9zE+PwjsCcALg4KvxHMD8s4260GHfbneh7vKxySg0totxstUfHZF+1md9dCgJr8ztqa/BThu9YT2K6tNal8Lmshv/fZ2rsrm7r4PIm7Jfjx++p5wsdvwmxKzHwiyvec+ahbothj1/nqbknLKkGTFnetDdJDVfuJknAxQqqD8xv/ecp9vPiylfg1ZnhUNW4lTUrjj+68vYb4Ua0tusQWAwavZ8AU6ZCNYMSGlZvZzL5HCyyZDKnNXoHPXun1JSgAjPziNgSk2yTE4a9PGJDk3w0KboYxaXV/E6RFa1G9otjRdHzbdqn4lbREIx2O9kENvchWKg9mbuuibQnqWIlcu57N9bKIaLz5WA7UqOkDpAk0pXv50JEqTFQkLCues8vAFa+niGGWY8zbXdEbI2g7EZUxPwlFxstCdwV4+7DZFBgmZpM5ThGJmQpwh+GmJ/I8gajO5K8xqbWDviEl2JL3F6iAr3qHpobg8IgkPkykFMWI+07Hrea2hFglSFiSTsk0+w7tcXhjsYoIb8B57Je/Qyl+G6wjXpc6oYngsXMKgFwavsN7fXkL//pPXFZ2sIsqwHMwc1zx2cay+vT/zYHXb/iB1kj2rpGMKsHdOvSZNLCiwU+ncmLp7mQ1XNzvI7ASzrQpeuXWFXz/mooP/I6iBMeNfW1VhKE3id9Kdx7RI46sO3dZnQjcmC99S45gg2JhCMnmEz4uJd4BtooHuo7XxNciueulPoF7/5CBAfY7Hp5RnS513mbojkb8AvS/rNGcreTUeCs2Tb4A1LNbPClGFQPAQ1+dGZIvfs6WPGKphRJodmDZ0jB73CU3DliDNix6nPT0oxbDssijlRXgAWvrIEofypvoAdhjJ5kqvBFJNjUrH4Xq9qsu2JYYx5cXTZB3zwSgbqSq1tCwjkvTRh7YCOI2sQaEaO3AXpBZV4VsyR3OQsNkr24ad6KrxC+cwHw/noWlxspQe7A3X1JrnYQrbJm8GnSOFiHg8K1nLjTGNAUc4ZZQBpdzPuPPNEldb4/DSHElsb4nx6EoFsjLtV9yh5AU3N2Bh3IGAHBsggeo+Q6CUUx7J4QFPELN8gOM56Br+Qb36WjLagQr4XI04Ltfjti5MzutB+rRTh8Q+lSkpIcAVwsZqtpHkhmzYrZVfjXZ7tGnvEFBXuhgGGdDgv4qiX4MhcDdysxV5NLz/qy9GflVe2GJXHNdBIs2o8oxyK17PvjBQ219fJK1skmAHnzJl9uEvXJfcUFAuXelxHiUVZUZHGVAVvCoI6VV5Qd5AbJW5g/UnvREBpSsbFvRcDDzbpFFxcIVhqHe048smls3CDbhbcRu647IGzWY5By0CsKTXN4EMF9+fuon0IN+MWBUSdUe732ZOl+FKz+gzPk9VZMgNlZd5UsQ1aShH7c9C9abVAlEQD4PGtJOprIXFWj+RGgxbBCE8uEMPggP7moKiqHt62FIYy3Snt82qwRfz+WgCneGZFjpcAwc+hSosL6tmQTw1r0aC3TlSzsLtg4Z0WEOHPq8Ciaa8PtypjDaw4JRK8PrqVueQhbc/lKEpwbOQins8fetpgFzF940p+1GJttn66AgKrQOTBm0kUmd5NSBug037UCWv+j5NNmoGmG8Y8iY7vawB16jOinBGjjifdAwVPKKBqE2s/sn0xTAy2adm1y3Nazf0rs9ZO6JgUM1BWSNxfmU4L3sYqYZfeuQmdZzKAyyfWW3u+8zpkUwS1ZttAqdTzCqw39QLjwoNeBpEOymJumuZGfKxomSMOZNEgNbBruItdOlC9zRfiPUnC6330FAFY1YnHWfJgQm3OFIMrPs/dcXuZDkIM7t3T0JuDgkYjiIYZAYFM31G6nhQXFkLNAM3W5wqT+k9Op8BQsh2prttmnFmOltQHfinU2HojtXyCPX/+TUs/ukRMXTFWxjgSbwKfYW8cQHKI70bSFNY4IPeM2ClkiHxf59lbwUiV5ob5OeHLbGA7gSeDMGQQNKaskURQKLENuZPQ+wvwi5AmocatOXIwM3shMAjt5QU/qLWUt+KNOFrs0IzpmdqLqNXQkJvz7oEMGoqbanbtMT+QryJhGoEp7YSA72lY84OIlshrzxtQzRbzx/O46LT+UcxW4nZ6Yg3u3Vc0yX4fQxDYnSb20Fw5A9xUWFBeUfDbTR1QWG9G9FVTR250FjokT2xZ2kLd2JZ4c4OYxrzk10BF+hOAcr9vC3SlkdAQiZH1PH3QfDbYThIaX7DtSDN4B0TGIYqVpeZ3hH5Z+J/AX/yv0kbc+vtXZByEyoP4L7JAZilyBt03dwXQxmwVd37OJ2aQnkaVOGBws8snUPlJw2f6auHagZOPqVRRmbb2bwgDndwoxBa7sTflDHInZ2yRQ2Nuw+HCCWX85sK2TUc5/KFPPigl6P80td2Ljm5Qht/URWV1SV7TG+XrG36m5oLfVVsGS8O8ypw1ajFPyu5cgmjTwuu3rjioatjPtUEMgSAwmDhcVZmf1TA0y3Ihb3d24xa1Bwy2mfKcVFtGpOL+KGabZjxxyUfFYMy6dvGVk0hKk5W83M+mzH87+5gt9y5TvjeYfgQFwq2caOPWaQqew2VKikvKcpfLZ7uuaPw5XW1URGrHuD26rudIWqrmXRRa3hvA3M0qm6bB+CYjCKubKTq98NwE6f2noNtybRrGapkeJEBoeHRh7mU4WujQNxTNQHaDrYyOsfT5AtiGVf2FeUDBDOHfLP9H1M3APNZclMYeqOZiC48SFpYYbuoLuzWT8NY5hF7KzcOgbLadMlsYzWrYqzN/QKqtwgmaJ15LOGCoKHPUYChLlcEj9LkO+92nxykMfqee7wNkglqZ/rcDf4jEoZg3+YXvh17sX5Ir2V4DqhkTd14TBKRviLO8iNI7ZOQNF11Wnc2kzGMZoQVHbFUbY7qtXDIJrAlCQzlbzc7L/AGw4l91NYQ9f9Fj+lp5+UAfvB+uQRnPVpsEvhPO2kl2d8TODBOc0hvogyz7WYHx+JfNhcrh+gQe0p9eHg9FXRGAULjKAlYk9uweoJO8/lZBiLWRtjUjSWABMG6Ch4VbcXWKZS2HjGp5U/eMnTyXV9yce5SwhnwjR3yVkvuNA+7UCLjsV9Pjfnv2Bp6oBjkhVwBwODmhJtm0atoK7dkxu9r6dUPWsg2srpDBh6tFVI/C8MbBX3dAuKOPf44H5nwHWXwAeW+pRWpfsUWpbnR3v8b99s7icp9wADYLAOlDllCrZCPH676WRqUE+uCaxX3RwXXiyISM7RG1sowrMKN0EVphO37bIGzbLzmSReIin4CVieZgWNRUL9vEqmGKnaedivaVnxG/9pY6rgeVr6znCHmWKJvVhSrTmKoNoXqnMzq2WR2PDIwUyvxmI72TrNPbKoZ3HX+/TN0QZD/1z4gHNdltFvghyzJJ114yRsPljcq+wjEv4i/rQPyJDYTgWes1kgyR36/g81UwcCcxtJ0Csy01oSa84DYviD9xLw85rSRILreD7+GE3CwGsm3VNx2e8XYP8jvuu92r2CJTeig4tiCLtdGUaNo9epC93HDtxvCazrt0JmDfiNuSxsp2NUBzUK2erosMHF1OHyGizNIk/3aZ6nQPli1p7lQMPmHB8Ew1NZeIXsQICBA+CTgrd25+96eEgNEb/6ofyxdpAc5ur39IsJ8Se3fsa7WIZXfzm3ECD7pxKmBXZusONgTcr41bUcY54Ounv7buNU6EKZ6CH2/5HwhEYxIJWkO6PRFzvlWstlsitid+qVK6a+PpDyhxoFZ+e8HYBLpsvH2t56AqBJIR0xycim/IXkLNWBgEUhfo955hHFDbbpbuzhNf2Zajk5uZV0dV0Uve2sx5YzyaLPaZOXqXmBYbB8nXKAqVAf0s7KDvazWbTuLBnZXoTjnYvUnKiZIH+/PICemiJby6OWtIDRdQ9EeyObTzQqQUynfwaB9hAp8yvu8MInm6IJsa/+qZT93i0m9UxYJrNeZiBoixa3ehFtbRie6s6OUi4WY0t+xtjfoV+dWrKcr+wRIkHkwAs2hQEu71vZpl8/hOdFYQUQgdtM0IFcyuEJVYdhqLAMAzeDTpGwASHfIZQG2IyKLFcRCU1Pyv1Sik41c6VLMkWaFVyp3+Ku8D9b6Qt3Q88cAoiFMTz4AuBVLrIdTixbgkcf2V5v1aIX7vMfkUW5YH1CIDIpqVcZT8ATaVs+UCdc2c05Rud322LegMBhleT1MaKdxkC8Pd71tPJTcLrdbD0H+dyaaH7IPGY8yO5j4Yc27dr8V52QI639s4N5CnqENCb2BirK5H4K7bt2UIAbRv+8FglZi94JsXKPA2n/ZTMw5VT9mn4gmxJvsyStTmgCOMAN9jfS915ri6cBa1M+tY1hYTzPeW+k0BnlJO4dtcKaHT/iRCRZBdmARbdaENj3JzbBI6qxbDny1+7dbFQUyDiRNnXE9JCCtJMu1wnAuL8lyZbzyYqUhcfOrVS1Zpk1D7BhbUPi/osu+Gpk/71+Ill4b3djJQnJnKCC+X9hTzIaYi0GoDkhN9wOAPBF5m2gvto8cpPaqNGE8EkUT3DDmCzWM3vSvZWjQ4+m78RJtcl+DqW9PcanThmURyy5E65WxlFuit3QdkrPhdY9fCP4nUzHND8HR2ir6bkE0UfauIailj6uAkHZ67DQS1r2o7b+GIR2va1JOX1pUEe/j6MCdeB+KIYpA7sfwW/wjZfdLb62BfOUa9VVudskyrA6YdRECqgpyUY9MoeIHGUWLItvFyaIy5VLuoWa9+keXxOJze57WqKTuhHohqpnzIqzb4CXAn4Trw9cymen77vasZ9A8AZ1iVWyWOPoShcBn3O49v4tIRlolNsTF8zaJdnrv8weBLtPAIbOxWk8OJPAYEyJeDFDz2W8C+fCX0li+Dqwp3y4vF6V2ZbAad4ycA5X6/N+Etqi0pF06nbR7DwjaO1RF3NZuntVmSfpsrIjQt6HL/lLmP96iJuLfCf/H3+QhuXB5yLSG/Qx+GhZPgddeGu3+xBD7HVjZkLVCmO2noDYonYylWvr3NZJYbZuc8KMXbCcXn7zq/rVYIp5HclGgKfIaf7qNlnn9o4U0wEOXBUW7D9bOw1XfIiKOcGGwG5vaaPLuglbHUE617KZ5oyDme15ybfrup+mOsCVOQWA5lfL7MsGudNERrqzUDVU2LXFvKCv12GuA3yTC0ZX5DnqOPGSieTr5nslcbA5Gx2qFl6I3q0CHsknjZk7L0Nn9BzvcSdaJtsLLcuV9gtel6eY0yyerkElCJW2ziV4GO83s+EWJChROzjeOyZRhLUCrcbVXL3Pp/W21tSO3kimEWMiwGO05vmPYs2/OGOILRbQ2ti54wtPNmnhkiwy/I7jk8MsT4VwNRsENZ7GErV5YhWbp4+zt1ubgbbdkADekT9wehXx3bSGtDV4aL/xQZIRHQp0a7IiC9F2Ar69Den0lyFCed6M/OdDjGboSZ62vLO1JcEot7kgjzsU0NEDe9WrLwB1V6y/io3oz256VmSf13XU79R+TYXKgEVmy9UOYv6bbbkz/eTchLLRgBaPtz943D6rq1Y52uOJfDy4xbzgGp+etFS2T8+x1UjlL0Dm6cb/wpwd4KvRr+pozwfgeHaZ7uHuSCxVlvEZLVc6geT+B7Ur+Van7a52s5zwR5vmvLI+DFK8bOE8/Er0uvj0xdtmF9JgDJMhCAjVSPVG5ZJkjjMfTfZe6ebOalS3B3OQ7WWMc1h+sfNp5t0NjU0Wg8tcUN0SZqXs+3XfwpR7qOtyB9kw9urMw3R1ahNf43ixG5PsUIOIflawpI0R7a3SDrDmSv9/JukcObPEDEWsI8oqr25aGnZc88Kt7nq8wTOMoJ69MZ5ZGUh3fZmPZA08M0giFUWuXDU1ity6xm9s0dZxlf5hgmNguaOgDN5RvIvNfoAWD1yRAoRE68COAKcCABXd8IbAljiu52qA/NA+eIKUHs9vBNWyDlPbJ7/EGoYmGZBmpNpI1oLnqCrXe4koMr8qz1xxS5Qpb6+TB+ChXrLF2znjtqRCeO5vc7fzZ0HInSK1uaHTp+EGjfcX0e8ei2K3hFuRnVkRe0IzHO3ycReohA1F1OOfF6SYB96+EB0+H03McMqtu99AR4uwGdwGfwQ8bxrzf9QI7/xZFIiyVTKTAT9Etm27oGUtXcDb2teabYjK9ndd7V1IqtPPOPbhaJa9pRSb6wQIY8CZkRbTDHryP0OyszwTmogR9jLPZtR9r9NdzsrUd+kZdWbBcq6bkamunDlZahLWFjhGqAt6qnlZ0jhLH2V/2NviSGH72Nb+AGAazQVQYGcZ3ir8Xceo+kLiU5wgdgUUgtGCK58NqABE4C7hFLjC6OF/FJj+i1P+xUuxawj30pkPMD4eTxNhHDuhi0+FT3QPrxV1P8ziXr5gLoosMIFpHv7SDEsfTkMLfr3dtsySnFH4kWVK/jsGFBzyx/pL70rOvI49IBgGvqYxyExbDn31Z3oA2Qsw8003lRg2NdrNujnnNLoqydFX1WJc4YCDryJ5abnRF/UVLgd1EjETdxKKkvcrDLrThXcYCOWl2QahP1sZkWDCTcftqEDbG8xZ+a4VvEd2T1cobUtO39O7VM9uT0W+A2dKp9Bm71pz5g88zZB2sITGsymXCu2iA8PS7lFuEzW921f/ROy6cE5mhJQc61bt4fyUF+Q1YGwJmDFGzb8sDcFAAMfmh2Z7qCKMcYmMX06+icsOnvt2Es+3sJMmPf6OisV9SgMAPuGUpL+4MwBU6yU6SvHDysBnRKv1NikZShiYUR/+F76Mvo2LZR+0YoUSAoG/K+Q9ZPRSGAty4qt2A/VLgxyidbQwfeupRW4AGxwdZvH5KVI0reVZmI6W+wb0sSXDpUTq7gpUJgCl4xwAug6DfRfa2hrLgL+NY8RCdoLzKFqJieqCcrtUtYkIdQs2ubvbWA9SRqr1Udn34XTcjLo2YzhKYaqA/hn5eDhM/JU4UiZziGnyk4iBVmSQZNoJ76PA/MNtIviJOohyhV5+Mmf6SQh2lSlfBP8KJ/a/285gb+BDWvhBxeA9VAy36ECK3xaS8pWwGGloWKjfhG0b4Se9hFbJetELLqJIQkUpSsGw+bb3u0ZDDGt+cJZ8TAcbvkFM4O5+eq5K5DltCC2sceucwOW5VIb7/UDD1FWSkrdlFjEfYEMi6AmeQU4dVA/1Iz2RJPy0ti8yE81ruO/rvt93p4+4vIfPqmCUr5gfexTeFsuGow3AJgoOw4roHJZJc2Tc6SIrpxIKBMGK+hjZ/Vtn4TYSYOTj3XwWvUvQBbBIPbYd4Z5IHQEzlZiSYyAXxq5vorbCY3wDfASMWUFY5b0i2mXK2fQpLF6gkEVYj2/79/kb+QDulvL+OABgBFyFyz9u87AINHvkYXSsw1i8kCLwIEJ7thas4mEKQfqp8xjNYx6MBt9sHKxvaWXlTm8m1xRzMBNPmezRM60Gn90PdU/Cih9NLJQ1HL6GXfm9SZTQQp3HOVU+Yc9iYV/gaLrMg4yL88XmOVraupaG8k9sumhFlM/cYR/GSMhPB/W7hHZEAjmSyC/s8uwf6U+m7PkAQJyWUlrK9Pd6pZqkDerqGbC8jAzCQgttxz2P8xjfhrq53MBsCKuc7yisxK5VnOa0wKKd5hHBczAbJf4YLRrAyVCbfKC8nLIE9A2Z46zEu7KVfwZ4y9AQ6L12hh474qqziDdGiMn9k3RE547oPpCJVaD8qHzwowqbfcb3viJ0A5ThI64lqmzAY7jHT5hi7BDVBsM+k2qu7K4VftqQl1H16l0xPycMCZMZ5NtMMqC4oCp5yE6LeBqk3Z8KID2F13e36VeVL0/eOVbAeq3rhPJL4ri6KTwGvBC27DNMxEQzTfOBXPFwuvom0u4KEU1QBwIVMS7WVYzn1qhSanlT2yfile64h0qUGw+Mni78wZrZORiy9Bbz5h68yDXkNLLV/8m5nQICv65Gn1xbDWI2vw/h9dSgLjUEynExftu5LAurAVwMKKmvfIgshlSEoALh0jl2Ku6bcm/IzWFMpwr0MwjjOd/iRA0KaQiMhCusbTVabziOWID9VLs0rUEXL8bdMsC8MWIAvx9TBgeAajNTC6aJcFeBPVieqN8Dts6dqab2CggvwNETVvU2S0yWhAfn5kmOC+FCJKluaLrosxGxtUZQ9GInA7GIcX31P1Unn463rPB7TbFITiyGS9RBTeb4dRdNW+Nf9f9DLMKd79yeLitcZ+AhIYDQmxkF7jU3cmx9zGaMFV3MqXUpvci1l3q7ClqJuxsl1BSrZbjc0Fvw7iGFX9O+W69LPCKsP8aoykweGwFeRqT3aaqAPb6cC7mMZH539XK1vvpPtbO/q7BN5I/EX27u5dyg6NPBF+0uCQW6e2MwfYE/Taay9ahl362vG1ShmH73jt1pP2+D4v42QM1ynTnkL83EKxa2M1/ujjPf9tm6W9cmM2vbHujzA3NYqmpKM1Wpy3q4Y25Tix5+59p/P4b5k3ef0bwUfyb5vICPjWnLZ7L+YwTK/z6A7YEkC5dXQIeLSfE4Vy8J09fbr5WFyqkdOFrGtJx5hSJYXKwgDM88X9TGNiRplumg/YU4KoCKrFxIPcyWMtHo95Zd9q4Lfauxxu7SteoflOYQcnq/KnX29C/jk1DoWXgmd41PUf3f/aLNCBIT8UE2/p5ly6VH5vmWCa7uAoJVKxZkMl4K7r+z3BhNhdEn4EXNaM3BiZv2lQsASdJqEKU+Ha6I/NxIqMj3jk5c9bIlsOOZTLECGBUg8Lxwz8EmuN0gPHXX4XUDqnI/vKN5m/fpD/Vwv+gnKBAZ7WIX4ebtqAZ5LkN1RtUwcAxu/AOU5s4ZzYCin948MOTDJhL1JuDhMbOjqCxNbvm3UjFZwKJANkbyMeQmXVNMqzTRjfr2WLhS1A3AKI7DgQ3kLg83ouAP7g2aBNoN+wiKrdWv3sSAe3uJgLzQr9GwPuHJaMCMgVBg4TiGXrP6jHIGqhc/sKcifQZJ3P8F7xTmHZLiS1Jo7rJQ92q0tTrEq9+Yav3ywJiuczMKLj5Fnyywt/i20N5ukEggsHGFdbYga6ns/tkT0kJag3J1CbspswNzArN0rMUMNFHsQxl3Ut7qjCoABUNOUusB7dVJL5dlybpL+1zaJq/bPuXnk/kGmvTc+q9WGTB5xAhLEPb9p8RbVJ0p7QAVa3dETGEZBfEJQ7nvb+3R0nduCqg88crwDn1TCXMfro//v/yf7YNTjdLcj/4QwFJ8Kn/8ck+gRUzi0mKMhLY3EMf9nv3qJ1xrd2mTbsKRf4ehiUDMakQSKCoNb5DqNJmSNykNteg/gxNYtAeOhQO8iZvIzghbXCWiABqXPueW5YOBI2qF5rQbJ4ZWDhM2So29X90aVcHGIRbAxNyzDycJ3d6+ZHwTtDQ/KZDEKwimrFzV/4phLhnwfQvPqr6XUX3+9lD3ZnphxpsB6eJJuqyDRuBD8jpJAob8wUeol+jtf89NLSqEo1eToIg1V3vX3iEg39vJFmzb/8Nm0rRuv8OPymBx6sLAx7JVM67i8/rRdUdvPkTaouhV/x6F5/uQ1yqAMx4E+LSzCWR5N8Q6KTNXjmuDsRl12kX3Cvg15Bj1a1yeA921T1DLVgb9JLRnRLjq5AfajF0pvVT77mCCrGyfN18RsbonuxP1Ee4X/l7jxaL68NGaZtV4U4VjiqMEvFraCtyEWmX+itGgeY22T8I6+w28wwbvwZ4hbkh34Gd4rJ/Z4pSJVnnQ0QueSbXcJxEKf1AGvB0yMtIypXs797L11RaIiyct8GFpGvvMOeQyRKxUlPCmHWHkjSN6uOh1Fy2jiC1J13cLdLOxFkeh9B2dwJ6YAJlA06aKsdTHt3uDiqK/bv+CAkPJ3HkP8ywjKZufOq3tYQQA2ebiXOyx2Z4jaJvG6SlLnBW0iFUQuV0X3CM+NwnPZrzsGSAQX2hmKsg3oTVMoqk7Vugzr4AHMjPdELM3Fi56nm4NzQwbir0vYi2OiaFJcsjCpgWUD9O75fWqNWnV05/KBEwSWVhltua3jMItr/JK2m098Y1qgGcY+FnrHLRBIZwNbjjKYom4HKfF0XqMLi/wDS7hloJBrN37vZ9+ZU8oCys3ojxUqKogDhuWACkU0XDf8UskK6TvvKJZRp4vhHFgEJd49IJTg/EiNGwKs6en/i9yTk7to0xV9yKx3jU0Xijryn6BDBIilJSZ7x0NOKr0TF83nz672yAEfHZYLVGCvNPX7TRgMr4EpdqLaxHkWLNo3Bon6U2LRK4HMEtYQAQ1BWrA9af5kbcRrZHigRXlSAjM96FqN6iFfVYwTDRVoQvhi+l8xVFl/O/tsWBYQLqI3VcOBU/VjKGKm6bXNzspZQBHKRvnr/xDq39ZTl22VKx4r25FHwDRCNOxiRRpHUZ+L5LrDzQOfjg7+nYTJUN1UCmke70zoLmruERX4mC+SMpN2MXjS1qSOxAAtBjYV5wNsbfhCgEFiufAc0baho3McnHy7DzpMFWPXkmt/SrY3LkwsJ3Bn64zVnyHWF4juV2ygRIC7nCpm+Vy+Dr17748Am2HaHk+vlEa61ilcqHDdQbg/Swx9olxdfEoxNrYuDHku6yVFgJ8L8d6/K4vsTvX5uxDmzPogbC9DMRldct35BAAPts8EMlssqF0AkHpK3fHidOZaSq5AJxw5QOh0os9Ihka0t4cDZsoiHLK6gBG52Wm2HSSIKtPasaDxm3MxQo/gReo/+LjgiHN6oj6mSeqyhNHKVne3ZBL/M8/AJQf+MyaVjyYFXwcLme96LMUF6wn8LQnZ5kWOvLqHNChSd255Bqj1hRbJBOfiAzu/tdV3d09AxTGunzO3E3zSUUlQ0KLI87WA1xPQl2MH6i+u6FGQ4BZH13kJsgcJRofXu47D5WGu0jXxi1TI8EX1O3keqcoQjJzIucurx1i5uVWOZFzxvBHKgIBSIWfjUP9oNPWTvr2uH1wCVRuhapcAm2im9MQZbwJ9a8d9k7xg1PJrcoQA3CRwXcoyFKS+8qympAzZgX/h6U2lbm+k5vg8AA5VTkDaqZbh5tMiWn+HQOXC8mkaEeYKphYrGhL+BSdbyROsXTtzVSfsS9uzDPjbYV71RG0J0t77NNW8b2/pVAe0PT9wCkZxkK4+5kqf/54Rb+IYcNcOqI5gzHvSc8kEdRwHQCObyouOKvCq/40YyMjHdKzEDk7pJ+65d7drjAhB1Pk/6S9nezBYgr3x31i+0NrbtvbHhbU8Orvr+ZHSbb3h4YEk297c+UbNzOUP17eFOplXyEpPoXGemZhl1rzPvMUbui3jQNre6z0S3TQ6w4OFi2JdOA+VeAzNXKS7e/aW8bJTlfv5CTVRAx1Xp+AH/1Z35MLGO3EVez3+GrQBL4mlw5VQSw3GFI7iuo/N79hZw/o8DTo0lAtontbIvUpx4QO0IcwGT2T+uFXcpHl+vEgfc+dVmXBE7WXsux+3ejkE/1u61GkUw/duprDveXeS5DEgpMFyiT+nFWGiGxt2+S1sjQuTCIqkAVoljOG2Fj/4+aR8SCR/sq4EXz7+otv+gr+UR8mikbOmdRCg/2XNBZ9Ac29QtweFee3HhwFwXQ6t0XiuHT/ZeBNc+4vQPHSbR6pR59zfc8d76wZjGCzZ3TjB9Y9TKhFL9VXfvYK5NVUNVSRozXOLuPOeD1hmzqrQzNei9BV5r4HGFTfA+6QmeZ2k8razMen1eMy1V538tr4i+PNWX6cNC07ifILBqj5RU87YNBEKzIJGAXwjDkgH46XLW3A8OraVStjuX6pZp2jABwd8yGOcRq5E63tXbaqTiA2uRxOjyjx5MOE/MDM/wgNGvivguRXCifF0W5TOmPa1kR0rN1xEusAfSML0DNilSoQ/Ig8JMakDm6cJey2scBgWmvZJuDtT1jB3jjjmFvLPQ1gyJOg998XoBNUpY4DtyZ4oDNF4pen6CsZjFuRe/sOCeRc1d4+IiGVC/eldJ+xJvxW3e4s3fWkh5TeveDHT+oS/uPH3PgF71jVrC9/707i4g+gFXgAIFv88VrJDt7w/ZhrQKc9pdYlquhC0Zb70giAPZgNTt9h9UcFK2t78Tf07/EwsjevRm7sS4OdV6bXNBqSe8hChh16IQj6IL7txzlqP1zpM3CmDpwNG6Z7v8Wny6Oim5xmNwOxmKUaA4xbQbWrjyCixn6lV0ZL7fSE2luGNIz5iH1FRNH6Hgb/qGs3imPJaM00YiO/vP5lu/ZcD1s/Ugk0sAC/ni2G6c98H8d4En2uQ1LPUEZN+wzPhAzz9Ebzjl8seYUAJjH2h99yjxy692EMKPkYz2W2eZ8FtklhS/K02e+Z27aSsxoi2VFqYnskriYscJCVr6DZVdCWcZByXttr9vZmLH3oVtw9HmwJIJkUf3wkBwks6JHNDa3wck5ZuAhPBjmM7BEOiwcZ9T7duZTYVQFRUDSIV1C9x8javEeYcLsV/XfcwugncttZ2qq/qQvXf1hFP7tUAPmFaBITp6rcedugDzM/XbcNqhECEat3LHWc9sEwNbJVAEto361iy9vs8KsuXIBK6vHjMmvsgNl4cPuepw5uPB2GJpv1rZmLr5ASY97vuiBFItCe82GzGvF+FnIZud1Wb1mMnU1cMVFIMGKrOGT5vwGaUlDKRvc9z7mL5Zh3iPBbNTv/AsTmBSfl75isvc+mtzZgp2G5EMCQyoj1wsan5BojlY2CmE7hHlPntnis5MZg4xlYEdB9B+CkV1oJFuUgmYwfcibQ6x5ws6RPiNuAF8mzQGovCVR9ppt7z8UqYhbkW+lJe/c4j6FdGzUHUSu26epyrBXzmshQ0U59DqMC2vCHM1kTv14Hgy2H9V1vgFNOwVX37Kx405QUYsGOCZPgNOrdDon6ARIp3f7JXwCaicyifxdIbh8Fcnm9PPgvOcdh8PWNowEKWeDiJAFXgecF8PHpIKfFYJsN3guRPaw3rgRT3xkjPZ/YY14hrJKCPVb5COGZWD7ujqyJB915tpfyKpYXJw5RqgQXe5TE0Deh5Oo3Ka1uoUwd0gl/tmeFTq9+kLTQlKhLL7Tx0b5bYAABkfGyGL9yODKwABrUweuJ5btl35AymYV6A31XSoL/b9GZgyhQkaugD2Fogmpo6qUKTfWz/+8z6j+y7VZkXcGt3fqX6rjYa9IXpcad/y7xxBzjohUPjVjdx6mV4Y0u766nMRYi+qYFkA+5NO3brf0d7imSDthLP7WYaQe0/iZTqgjgzlg2HXia8oWi+F44Hqb/+o19KH64XYvwDE56iqIqDf7b4+ZtGmoWRFyIQW6cZEiaBsmTica/9jGpswkL/auNzNhbfkiDFjdU3i6WoPCwuaDP21Zu+BMyf4s+dyWPD9TVuFhXT+zkibrFkO8vfTkwYBxZcpwbGQRU2h5a3cDAH2EcfKbWLR+fUO/4+pv6ktiiqWP29BYoByT6pnvxMP5ZvjcLdh5AeCmAkSPuI0eeBaPoeOkLeIFIg+8dwDuleYn8939/bokJ5fgp8EleeDWPvsRt/xdx84uVJ2FebK7nGb3lUQjdyKvZ4AjfUPLcE/eSeILPtemcEr0xTCYrkSJhda700vk0UVsuJbQe5fTyHLpBQ+jruG0BscyVr/+IaNM4m5QRNUeQ/1L8zKgt9dCSRMXrxNWjmQYw5OrvJmqMaXVxrQEuICziAE30BVdNeAk3lzV+aZc9IGxcFTr77kFtFPMgKwUUo7pu8QnyZ06TDuQtkuiTg4csa97Za7hZn5Dk5GCJXjQBMmGqSu2zgjUfeC9/jvGNXFALES0g7qmedM+9AmQGp2Rml+A50oRlxgmy1bWR2mVvhFprDKhRqSQsg/6TPYhPi+V2d5tQXMguoxUqaQEhsJtM46gpK+cEwZC6/lw4pllsz1zVl0surHLATRsJG4qwfCytREyl9woKAfbSuJPydA8UZEyMGAYDDGQBKUg4B5iRzgE/SzI0nAsEQKQh18LtkCfm1o11M131bI0ZnyQE4ENXjRjzROvi1cwCHnzbPsFNLisbwNoYOaIefW2ig27x+Lq0PjyM58YClHGlc8A0f4u3R1TxV6GCHY+Ryhq76zhQXDFPrXo48Peua2yFlZll+WwrXXyHhEy4E0iPX7HuyvVJ9HaQMh6D2sG/ey7/9n8B8Qh8GGMg/5didCPQ3yZnN2GQIZrfX0jL9SAu9JgDReY6pQEHUpcXfvE2sj8zIOAFvJghQgEqRVe0RmXMS8YwgcYI1CAu0caVRaXE1pdKE5vObjMkthRcsGvjJXXHlK+oKELLH9SBUn0K1iL/bvxLCNMlBL1Y4fiZ1OZXjA2+zd8KlUL4iDiQvDmKcAGaX2m121mS6RuSHuEUy2g6Dhf9WGXI308SyCjWu4C6j17oYK2OSaPiKi17IRlsSJbRgE2ko//b6Yb63NDeOwou3RGbrwdJq1yWIXtgGZL4315UtxLVN9VaJMkjSfz0d8d4f9qbNcZ8ILBQZvuwDzlS2g53Y3Vtbx2qm3S2sQkuak/i4KMi1SZ3Ap+1UqA9VTyAr8QZbdeYVcYADUwsBwMsYdwbcooalvbBwpi0QeuHOwIbCl2V2IBtP4PR0FQzk4WluB7PV21Y+pgCuBZIJS4/E2DEIbWmEbJ6CJ3u3bwo9oKFNGAHpnc1qUaSh8gDdzmDpYzBBeH4J/3HFa2wFFWhqoShnZpL23j3wMu+cXzH+pGlbnISk04XNbec3SypnD+NtlcWRfhbYVWrzzbZpNCxqMURRsJqp3kOHPmoTAL5Hy+FMcpJoZLQ4N9WNZAQfMc99wbU3RSBpoqgAexT4zXWG7lsaskAAgghqxBo6mUbQbfl1ZavLTm6s7+FaPKyn4vHUVSaET96ul3LjIpCV3g2AIbGLD94R0aUP4D2RHEL343UMT69bBzFjzFm/YryQFvMbh0jfIi2cCwzPdLrjMtcVKkgSuKIfcjS6CfN2kIxrssGfjnsekjutPERteZ0JGTMSpsljUcAQ2qpKFJtF1xS5BfX9M0RpDzDQ7UaSlXzVyjK4yKQpQoEA9zTfD1m/TYylrh9eqplUN/AO5+0CiEbvIA6nriWikEZOr6xZi7UdkAMtA2TN25pxXn4UwOzCQbV0UIUCaCGjpjcppg6SGTEJovYI3x1A3gJc7YX8omoCsnhSxWiIo+qTOAxxWMgoDlQMLk5pililhZ77MBcv21kzhSkj/2kJc8UGGI36XJhI1ANwEc3akC7wCsO03zVtj2Ne6rWHR3nFJg7cLPxr2VGruf9m2n0dUCKhtASX/I6U5I/WCq3c+B9ROs6S00ywJh47deLW5HQR8G/msinw8bh+T32qgdXwOQvPLyI85aaI7jkmYfpezOR89xOvBKimcCqyg3jo5nOPSXBx08EL43huhbqzAlqecsYFVo3ZiLVL+jAynf5XEJMOCyzUxZRAHe6qzGBj/Lppy16ezc9nS5W/v668qrLpj2h+qar/L+djNXKlIDoDZLHb5MnsSe6WDx4l5dAEvkUUvBdn/ADM45mF1tdV7NMyASPmUCgI9qMAUxbvCCxKmo4ZsqC8iOxr0WexUkOH8Zp8KmrcPWzxOWojGmIXOXDfIhtqoXrVQtMQ4y14B7Mphe4CNtFXTyMfsACJgTlfe5la8IGZ7mDYAhR3r/vHqd8JY81Vx0JKprV1S0mf8025l6D/Q8LaFj7fh3j7dVcizFaNNs6ojhIo8/k3NK8GxMVJGpmO8+YvCYCSNTTTL/VGtlHQCHs7BaYB1/aL0a//kRIl+eiLjh+hqTjcpj8ePU//peoOWTuOpOmCNl9lNi6rrnwfjyxE2hF2MMlp53jhrncKp30sysIED2uEYI5CngWP8NU4OIEmEfBo85jaXrAQpFChEySTqoDGyaT9y+2rKAfJIc2eJyYeCleqz7Sz/0lw5PMJzfhdwDItkrzmtiZJV5aAw4QH8EaZy6PwsDX/eWqDk+ZvX1kC/tODyvDMv+PwDPcg8ukfClBMRJggC2958ZCxoXRYx1puv4gTvohCGmGXjUU/c7vOEclDQi5lKiPx4RYNO0CBnKwNXcW/6lzGoakMDI3o7F2UNT9s6hQYR78o28PNpsjnIAedaKZRgjDMSb64aJH+GwxH/VPTpJ8k5eYsLa33oOsgpQmgGQ7DC1h3g9E4xe3LXAtVzduw1LFuFesyuxAXStn32DBbhmDz4B/0Nukcc+8QsqbVlsWCWbNAbHLaEMkQbsc7w7s8pFaWmFtGBzTf4PVYVosc3yvkIBFlH5rJcGtRJ+M7UaGMfeCHBC60KdCasRPQmqIt9hr19xQafTXtI1o4inJ40H0piDOao956yPDJlsppzPV50JCui6Kbx6sTuJ6v9FOIuovDZxxno+s+a3KFcRzANW9pLOO1hZ0CsQf56zxVu2cV+4chrE9JdrA4fgFIAOCVkFoUJbI75RUk8hXkprSgCTXV7mwFRzzYb9vmVcBQG097jgmF59kPhEmd3GMMgUhtLaAWS74KGM6W7nRa3F+F1a3bxwWPwk6JBZgVDMPAIfc0MogTsshiHo5y6LQe8vQtiIMGUbTTkBkT/bZb0jDqLlfdVqfxIrfrUDvCp2TQ+F51DUTB+4AOGkBmh4jJzcdAKsXFxQvML94AoQivvHvoz6U8j22fjFBTY/NJJAUFK+eKzO2i+wRx6CXMVDWBiR1+L1kPIJWGXujfNk5J1SWtRgI1+/0RTOXxJK/NRsFfEI9G9nKDyJy9D/r6UeHafnyHKAQTI/Z9X8IGxWEA6p6sOSn1CnKampyPeyr8rUZsDkv+Bc5s27Jl0Md71NymTABVoFoaATBCfIKf5TBPbUp/+EBCo8uL1F0BoAAAA+LTaqi/L3eMq/pvTCwoWTdQc/WD7zZtCOahebWyTdHo0DyBo+9rhTeuF0djSUz1yHOhniMjcL/YQEwHgiC8qg9H1nasgB63tegU/WwfXxCzzY+/iII0CDM8+ctTBa7cRRj0hLyEM9SVVv/Uo80WJEP8WaCHtjqk91QAAAAS9rIAAAAAAAAAAAkrWQAAAAAAAAAGsZuAAAAAAAAAA=";
+    let transparentLogoDataUrl = RAW_LOGO_URI;
+
+    // Extract pure white pixels from #0D6B4C background so it floats cleanly on any gradient
+    function prepareTransparentLogo() {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, c.width, c.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          // R is ~13 on background green, 255 on white logo
+          const alpha = Math.max(0, Math.min(255, Math.round(1.09 * r - 19)));
+          d[i] = 255;
+          d[i + 1] = 255;
+          d[i + 2] = 255;
+          d[i + 3] = alpha;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        transparentLogoDataUrl = c.toDataURL('image/png');
+        render();
+      };
+      img.src = RAW_LOGO_URI;
+    }
+
+    // App State
+    const state = {
+      screen: 'splash', // splash | welcome | phone | pin | home | menu | order | reward | account | uikit
+      slideIndex: 0,
+      lang: 'Indonesia',
+      phoneInput: '',
+      pinInput: '',
+      orderMode: 'Pick Up',
+      outletName: 'Kopi B Senopati Flagship',
+      outletDist: '0.8 km',
+      bBeans: 145,
+      stamps: 6,
+      tumblerEco: false,
+      selectedCategory: 'Semua',
+      searchQuery: '',
+      customizingProduct: null,
+      custTemp: 'Iced ❄️',
+      custSugar: 'Less Sugar',
+      custMilk: 'Fresh Milk',
+      custSize: 'Regular',
+      showCheckoutModal: false,
+      showReceiptModal: false,
+      orderStageIndex: 1, // 0: Diterima, 1: Brewing, 2: Siap Diambil
+      cart: [
+        { id: 'aren', name: 'Aren Botanical Latte', price: 29000, qty: 1, summary: 'Iced ❄️ • Regular • Less Sugar' }
+      ],
+      products: [
+        { id: 'aren', name: 'Aren Botanical Latte', desc: '100% Arabica Gayo dengan gula aren organik & susu segar.', price: 29000, orig: 34000, cal: 165, rating: 4.9, cat: 'Signature', badge: 'BEST SELLER', color: '#C68B59', iced: true },
+        { id: 'pandan', name: 'Pandan Cloud Cold Brew', desc: 'Cold brew 16 jam dengan daun pandan asli & sweet cream foam.', price: 33000, orig: null, cal: 140, rating: 4.9, cat: 'Signature', badge: 'SIGNATURE', color: '#4E9F76', iced: true },
+        { id: 'oat-honey', name: 'Oat Honey Cinnamon Latte', desc: 'Susu gandum (Oat Milk) ramah lingkungan & madu hutan murni.', price: 36000, orig: 40000, cal: 130, rating: 4.9, cat: 'Oat Series', badge: 'PLANT-BASED', color: '#D5B887', iced: true },
+        { id: 'butterscotch', name: 'Butterscotch Sea Salt Latte', desc: 'Karamel butterscotch gurih dengan taburan French sea salt.', price: 34000, orig: null, cal: 190, rating: 4.8, cat: 'Signature', badge: 'FAVORIT', color: '#D7995B', iced: true },
+        { id: 'americano', name: 'Manuka Citrus Americano', desc: 'Espresso Arabica cerah dengan madu Manuka & jeruk sunkist.', price: 27000, orig: null, cal: 45, rating: 4.7, cat: 'Espresso', badge: 'LOW CAL', color: '#6B3E26', iced: true },
+        { id: 'matcha', name: 'Uji Matcha Forest Latte', desc: 'Pure ceremonial grade Uji Matcha Jepang creamy lembut.', price: 33000, orig: null, cal: 155, rating: 4.9, cat: 'Non-Coffee', badge: 'PURE UJI', color: '#5FA777', iced: true },
+        { id: 'croissant', name: 'Butter Almond Croissant', desc: 'Croissant berlapis renyah dengan krim almond panggang.', price: 29000, orig: null, cal: 260, rating: 4.9, cat: 'Bakery', badge: 'FRESH BAKED', color: '#E0A96D', iced: false }
+      ]
+    };
+
+    let splashTimer = null;
+
+    function formatRp(num) {
+      return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function setScreen(scr) {
+      if (splashTimer) { clearTimeout(splashTimer); splashTimer = null; }
+      state.screen = scr;
+      state.customizingProduct = null;
+      state.showCheckoutModal = false;
+      state.showReceiptModal = false;
+      if (scr === 'splash') {
+        splashTimer = setTimeout(() => {
+          if (state.screen === 'splash') setScreen('welcome');
+        }, 2600);
+      }
+      render();
+    }
+
+    function restartFullFlow() {
+      state.phoneInput = '';
+      state.pinInput = '';
+      setScreen('splash');
+    }
+
+    function renderStatusBar(lightText = false) {
+      const color = lightText ? 'text-white' : 'text-[#011E13]';
+      return `
+        <div class="w-full px-6 pt-3 pb-1.5 flex items-center justify-between text-xs font-semibold z-20 ${color}">
+          <span>16.45</span>
+          <div class="flex items-center gap-1.5">
+            <span>5G</span>
+            <span>100%</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBottomNav(activeTab) {
+      const tabs = [
+        { id: 'home', label: 'Home', icon: '🏠' },
+        { id: 'menu', label: 'Menu', icon: '☕' },
+        { id: 'order', label: 'Order', icon: '🧾', badge: 1 },
+        { id: 'reward', label: 'Reward', icon: '🌱' },
+        { id: 'account', label: 'Akun', icon: '👤' }
+      ];
+
+      const totalQty = state.cart.reduce((s, i) => s + i.qty, 0);
+      const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
+      const discount = subtotal >= 28000 ? 12000 : 0;
+      const total = Math.max(0, subtotal - discount - (state.tumblerEco ? 5000 : 0));
+      const showCart = totalQty > 0 && (activeTab === 'home' || activeTab === 'menu');
+
+      return `
+        <div class="mt-auto bg-white pt-1 pb-3 px-3 shadow-[0_-8px_24px_rgba(1,30,19,0.08)] z-20">
+          ${showCart ? `
+            <div onclick="openCheckout()" class="mb-2.5 px-4 py-2.5 rounded-full flex items-center justify-between cursor-pointer shadow-md transition hover:opacity-95" style="background:#0D6B4C; color:#FFFFFF;">
+              <div class="flex items-center gap-2.5">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" style="background:#28E5A7; color:#011E13;">${totalQty} Item</span>
+                <div>
+                  <div class="text-xs opacity-85">${state.orderMode} • ${state.outletName.replace('Kopi B ', '')}</div>
+                  <div class="text-sm font-bold">${formatRp(total)}</div>
+                </div>
+              </div>
+              <div class="text-xs font-bold flex items-center gap-1" style="color:#B3FEDB;">
+                Checkout →
+              </div>
+            </div>
+          ` : ''}
+          <div class="rounded-full p-1.5 flex items-center justify-around" style="background:#D8EFE7;">
+            ${tabs.map(t => {
+              const active = t.id === activeTab;
+              return `
+                <button onclick="setScreen('${t.id}')" class="flex-1 flex flex-col items-center py-0.5 relative">
+                  <div class="w-9 h-8 rounded-full flex items-center justify-center text-sm transition ${active ? 'text-white shadow-sm' : ''}" style="${active ? 'background:#0D6B4C;' : 'color:#05452E;'}">
+                    ${t.icon}
+                  </div>
+                  <span class="text-xs mt-0.5 ${active ? 'font-bold text-[#0D6B4C]' : 'font-medium text-[#4A6B5D]'}">${t.label}</span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 1: SPLASH SCREEN ─────────────────────────────────────────────
+    function renderSplashScreen() {
+      return `
+        <div onclick="setScreen('welcome')" class="splash-wave-bg w-full h-full flex flex-col justify-between cursor-pointer">
+          ${renderStatusBar(true)}
+          <div class="flex-1 flex flex-col items-center justify-center px-8 z-10">
+            <img src="${transparentLogoDataUrl}" alt="Kopi B Logo" class="w-64 object-contain splash-logo-anim drop-shadow-sm" />
+          </div>
+          <div class="pb-6 text-center z-10">
+            <span class="text-xs text-white/70">Ketuk layar atau tunggu otomatis ke Onboarding...</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 2: WELCOME / ONBOARDING (Format 3 Screen Referensi #1) ──────
+    function renderWelcomeScreen() {
+      const slides = [
+        { title: 'Semua Favoritmu dalam Satu Aplikasi', sub: 'Praktis pesan kopi dan pastry di Kopi B App!' },
+        { title: 'Pick Up Tanpa Antre & Delivery Cepat', sub: 'Pesan dari mana saja, barista langsung menyeduh kopimu.' },
+        { title: 'Kumpulkan B-Beans Setiap Transaksi', sub: 'Tukarkan poinmu dengan gratis kopi Signature #kopiyangbaik.' }
+      ];
+      const cur = slides[state.slideIndex];
+
+      return `
+        <div class="w-full h-full flex flex-col bg-white">
+          <div class="relative flex-[56] flex flex-col justify-between" style="background:linear-gradient(180deg,#F0F2F4 0%,#F7F8FA 70%,#FFFFFF 100%);">
+            ${renderStatusBar(false)}
+            <!-- Studio Product Composition: 2 Iced Kopi B Cups + 2 Artisanal Donuts -->
+            <div class="flex-1 flex items-center justify-center px-4">
+              <svg viewBox="0 0 320 270" class="w-72 h-64 overflow-visible">
+                <defs>
+                  <linearGradient id="americanoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#C05A1B"/>
+                    <stop offset="50%" stop-color="#7C2912"/>
+                    <stop offset="100%" stop-color="#4A1508"/>
+                  </linearGradient>
+                  <linearGradient id="latteGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#F7F1E8"/>
+                    <stop offset="38%" stop-color="#DEC6A9"/>
+                    <stop offset="100%" stop-color="#B68B61"/>
+                  </linearGradient>
+                  <radialGradient id="donut1" cx="40%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#EED9C4"/>
+                    <stop offset="65%" stop-color="#C2946A"/>
+                    <stop offset="100%" stop-color="#8C5E3A"/>
+                  </radialGradient>
+                  <radialGradient id="donut2" cx="40%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#D7B97C"/>
+                    <stop offset="65%" stop-color="#9E8247"/>
+                    <stop offset="100%" stop-color="#6B5429"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- Studio Table Contact Shadows -->
+                <ellipse cx="165" cy="175" rx="44" ry="11" fill="rgba(0,0,0,0.14)" />
+                <ellipse cx="86" cy="200" rx="46" ry="12" fill="rgba(0,0,0,0.18)" />
+                <ellipse cx="242" cy="195" rx="46" ry="12" fill="rgba(0,0,0,0.17)" />
+                <ellipse cx="170" cy="222" rx="48" ry="13" fill="rgba(0,0,0,0.22)" />
+
+                <!-- 1. Back Cup: Iced Americano Kopi B -->
+                <path d="M115,38 L215,38 L201,170 Q165,180 129,170 Z" fill="url(#americanoGrad)" />
+                <ellipse cx="165" cy="38" rx="50" ry="12" fill="#D97B29" stroke="#FFFFFF" stroke-width="2" />
+                <rect x="145" y="33" width="16" height="9" rx="2" fill="rgba(255,235,200,0.55)" />
+                <rect x="166" y="34" width="18" height="9" rx="2" fill="rgba(255,235,200,0.5)" />
+                <rect x="151" y="92" width="28" height="28" rx="8" fill="none" stroke="#0D6B4C" stroke-width="2.2" />
+                <ellipse cx="165" cy="106" rx="6" ry="9" fill="none" stroke="#0D6B4C" stroke-width="2" />
+                <text x="165" y="131" text-anchor="middle" fill="#05452E" font-size="8" font-weight="800" letter-spacing="0.8">KOPI B</text>
+
+                <!-- 2. Left Front Cup: Creamy Aren Crumble Latte Kopi B -->
+                <path d="M35,68 L139,68 L124,198 Q87,208 50,198 Z" fill="url(#latteGrad)" />
+                <path d="M35,68 L139,68 L135,100 Q87,108 39,100 Z" fill="#FAF7F2" />
+                <ellipse cx="87" cy="68" rx="52" ry="13" fill="#FCF9F5" stroke="#FFFFFF" stroke-width="2.5" />
+                <!-- Butterscotch Crumble Topping -->
+                <circle cx="68" cy="66" r="3.2" fill="#C68434" />
+                <circle cx="78" cy="70" r="3" fill="#B57226" />
+                <circle cx="86" cy="64" r="3.5" fill="#C68434" />
+                <circle cx="96" cy="69" r="3" fill="#D49546" />
+                <circle cx="105" cy="66" r="3.2" fill="#B57226" />
+                <circle cx="82" cy="72" r="2.6" fill="#D49546" />
+                <!-- Kopi B Green Emblem on Cup -->
+                <rect x="73" y="126" width="28" height="28" rx="8" fill="none" stroke="#0D6B4C" stroke-width="2.3" />
+                <ellipse cx="87" cy="140" rx="6" ry="9" fill="none" stroke="#0D6B4C" stroke-width="2" />
+                <text x="87" y="165" text-anchor="middle" fill="#05452E" font-size="8.5" font-weight="800" letter-spacing="0.8">KOPI B</text>
+
+                <!-- 3. Right Donut: Strawberry Cream Bomboloni -->
+                <ellipse cx="242" cy="162" rx="45" ry="34" fill="url(#donut1)" />
+                <ellipse cx="242" cy="158" rx="39" ry="26" fill="rgba(255,255,255,0.32)" />
+                <ellipse cx="242" cy="138" rx="16" ry="8" fill="#FFF1C2" />
+                <path d="M242,115 Q256,126 252,139 Q242,143 232,139 Q228,126 242,115 Z" fill="#D9232E" />
+
+                <!-- 4. Center Front Donut: Torched Cheese Matcha Bomboloni -->
+                <ellipse cx="170" cy="190" rx="47" ry="35" fill="url(#donut2)" />
+                <polygon points="170,160 198,173 170,187 142,173" fill="#F3B340" />
+                <circle cx="170" cy="173" r="9" fill="rgba(74,44,17,0.62)" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Bottom Content Section -->
+          <div class="flex-[44] px-7 pt-3 pb-6 flex flex-col items-center justify-between bg-white">
+            <!-- 3 Carousel Dots -->
+            <div class="flex items-center gap-2">
+              ${[0, 1, 2].map(i => `
+                <button onclick="state.slideIndex=${i}; render();" class="w-2 h-2 rounded-full transition" style="background:${state.slideIndex === i ? '#0D6B4C' : '#C2CCC8'};"></button>
+              `).join('')}
+            </div>
+
+            <div class="text-center mt-2">
+              <h2 class="font-bold text-lg leading-snug" style="color:#0D6B4C;">${cur.title}</h2>
+              <p class="text-xs mt-2" style="color:#011E13;">${cur.sub}</p>
+            </div>
+
+            <!-- Language Pill Button -->
+            <button onclick="state.lang = state.lang === 'Indonesia' ? 'English' : 'Indonesia'; render();" class="px-4 py-2 rounded-full border flex items-center gap-2.5 text-xs font-semibold" style="border-color:#D0D7D4; color:#011E13;">
+              <span class="inline-flex flex-col w-5 h-3.5 rounded-[2px] overflow-hidden border border-neutral-200 shadow-2xs">
+                <span class="flex-1 bg-[#E11D23]"></span>
+                <span class="flex-1 bg-white"></span>
+              </span>
+              <span>${state.lang}</span>
+              <span class="text-xs">⌄</span>
+            </button>
+
+            <div class="w-full flex flex-col items-center gap-2.5">
+              <!-- Full-Width Pill Button "Masuk" -->
+              <button onclick="setScreen('phone')" class="w-full py-3 rounded-full text-white font-bold text-sm shadow-md transition hover:opacity-95" style="background:#0D6B4C;">
+                Masuk
+              </button>
+              <!-- "Lewati tahap ini" -->
+              <button onclick="setScreen('home')" class="py-1 text-xs font-semibold" style="color:#05452E;">
+                Lewati tahap ini
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 3: MASUK — INPUT NOMOR TELEPON (Referensi #2) ────────────────
+    function renderPhoneLoginScreen() {
+      const isValid = state.phoneInput.trim().length >= 8;
+      return `
+        <div class="w-full h-full flex flex-col bg-white">
+          ${renderStatusBar(false)}
+          <!-- Top AppBar -->
+          <div class="px-5 py-3 flex items-center justify-between">
+            <button onclick="setScreen('welcome')" class="w-7 h-7 rounded-full border-[1.5px] flex items-center justify-center font-bold text-sm" style="border-color:#05452E; color:#05452E;">
+              ‹
+            </button>
+            <span class="font-semibold text-base" style="color:#05452E;">Masuk</span>
+            <span class="w-7"></span>
+          </div>
+
+          <div class="px-5 pt-7 flex flex-col">
+            <label class="font-semibold text-sm mb-4" style="color:#05452E;">Masukkan no telepon</label>
+
+            <!-- Phone Field Row with Bottom Underline -->
+            <div class="pb-2.5 border-b flex items-center gap-3" style="border-color:#9CAEA6;">
+              <div class="px-2.5 py-1.5 rounded-md flex items-center gap-1.5 text-xs font-bold" style="background:#F0F2F1; color:#05452E;">
+                <span>+62</span>
+                <span>⌄</span>
+              </div>
+              <input
+                type="tel"
+                value="${state.phoneInput}"
+                placeholder="81234567890"
+                oninput="state.phoneInput = this.value.replace(/[^0-9]/g, ''); render();"
+                class="flex-1 text-base font-medium outline-none bg-transparent placeholder-[#B7C0BC]"
+                style="color:#011E13;"
+              />
+            </div>
+
+            <!-- Quick Fill Helper for Reviewer -->
+            <div class="mt-2 flex items-center justify-between">
+              <span class="text-xs text-neutral-400">Ketik min. 8 digit atau klik isi cepat:</span>
+              <button onclick="state.phoneInput='81234567890'; render();" class="text-xs font-semibold underline" style="color:#0D6B4C;">
+                Isi 81234567890
+              </button>
+            </div>
+
+            <!-- Tombol Lanjutkan (Grey when empty, #0D6B4C when valid) -->
+            <button
+              onclick="${isValid ? "setScreen('pin')" : ''}"
+              class="w-full mt-7 py-3.5 rounded-lg text-white font-semibold text-sm transition"
+              style="background:${isValid ? '#0D6B4C' : '#C5C7C6'}; cursor:${isValid ? 'pointer' : 'not-allowed'};"
+            >
+              Lanjutkan
+            </button>
+
+            <!-- Disclaimer Syarat & Ketentuan -->
+            <p class="mt-5 text-xs leading-relaxed" style="color:#011E13;">
+              Dengan masuk aplikasi Kopi B, kamu telah menyetujui
+              <span class="font-semibold" style="color:#05452E;">Syarat &amp; Ketentuan</span>
+              dan
+              <span class="font-semibold" style="color:#05452E;">Kebijakan Privasi</span>
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 4: PIN KOPI B (Referensi #3) ─────────────────────────────────
+    function pressPinDigit(d) {
+      if (state.pinInput.length >= 6) return;
+      state.pinInput += d;
+      render();
+      if (state.pinInput.length === 6) {
+        setTimeout(() => setScreen('home'), 260);
+      }
+    }
+
+    function backspacePin() {
+      state.pinInput = state.pinInput.slice(0, -1);
+      render();
+    }
+
+    function renderPinScreen() {
+      const len = state.pinInput.length;
+      return `
+        <div class="w-full h-full flex flex-col bg-white justify-between">
+          <div>
+            ${renderStatusBar(false)}
+            <!-- Top AppBar -->
+            <div class="px-5 py-3 flex items-center justify-between">
+              <button onclick="setScreen('phone')" class="w-7 h-7 rounded-full border-[1.5px] flex items-center justify-center font-bold text-sm" style="border-color:#05452E; color:#05452E;">
+                ‹
+              </button>
+              <span class="font-semibold text-base" style="color:#05452E;">PIN Kopi B</span>
+              <span class="w-7"></span>
+            </div>
+
+            <div class="px-7 pt-8 text-center">
+              <h2 class="font-semibold text-base" style="color:#05452E;">Masukkan PIN</h2>
+              <p class="text-xs mt-3 leading-relaxed" style="color:#4A6B5D;">
+                Masukkan nomor PIN yang kamu daftarkan pada aplikasi<br/>Kopi B
+              </p>
+
+              <!-- 6 PIN Underlines with Vertical Green Blinking Cursor -->
+              <div class="mt-10 grid grid-cols-6 gap-2.5 px-1">
+                ${[0, 1, 2, 3, 4, 5].map(i => {
+                  const filled = i < len;
+                  const current = i === len;
+                  return `
+                    <div class="flex flex-col items-center">
+                      <div class="h-9 flex items-center justify-center">
+                        ${filled
+                          ? '<span class="w-3 h-3 rounded-full" style="background:#05452E;"></span>'
+                          : (current ? '<span class="w-[2.2px] h-8 pin-cursor" style="background:#05452E;"></span>' : '')
+                        }
+                      </div>
+                      <div class="w-full mt-1" style="height:${current ? '2.4px' : '1.5px'}; background:#05452E;"></div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+
+              <button onclick="state.pinInput='123456'; render(); setTimeout(()=>setScreen('home'), 250);" class="mt-9 text-xs font-bold" style="color:#0D6B4C;">
+                Lupa PIN
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Numeric Keypad at Bottom (Matching Reference #3) -->
+          <div class="p-3 pb-5" style="background:#F7ECEB;">
+            <div class="flex items-center justify-between px-2 mb-3">
+              <span class="text-sm font-bold text-neutral-800">⊞</span>
+              <span class="px-3.5 py-1 rounded-full bg-white text-xs font-semibold text-neutral-800 shadow-2xs">🔑 Sandi</span>
+              <span class="text-xs text-neutral-500">🎤</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              ${['1','2','3','4','5','6','7','8','9'].map(n => `
+                <button onclick="pressPinDigit('${n}')" class="h-12 rounded-full bg-white text-xl font-medium text-neutral-900 shadow-2xs active:scale-95 transition">${n}</button>
+              `).join('')}
+              <button onclick="backspacePin()" class="h-12 rounded-full text-base font-semibold text-neutral-900 flex items-center justify-center active:scale-95 transition" style="background:#F3D9D7;">⌫</button>
+              <button onclick="pressPinDigit('0')" class="h-12 rounded-full bg-white text-xl font-medium text-neutral-900 shadow-2xs active:scale-95 transition">0</button>
+              <button onclick="setScreen('home')" class="h-12 rounded-full text-base font-semibold text-neutral-900 flex items-center justify-center active:scale-95 transition" style="background:#F3D9D7;">→|</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 5: HOME SCREEN ───────────────────────────────────────────────
+    function renderHomeScreen() {
+      const progressPct = Math.round((state.bBeans / 200) * 100);
+      return `
+        <div class="w-full h-full flex flex-col bg-white overflow-hidden">
+          <div class="flex-1 overflow-y-auto no-scrollbar">
+            <!-- Botanical Green Hero Header -->
+            <div class="rounded-b-[28px] pb-5 px-4" style="background:linear-gradient(135deg,#05452E 0%,#0D6B4C 60%,#117E5A 100%);">
+              ${renderStatusBar(true)}
+              <div class="flex items-center justify-between mt-1">
+                <img src="${transparentLogoDataUrl}" alt="Kopi B" class="h-10 object-contain" />
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold border" style="background:rgba(179,254,219,0.16); color:#B3FEDB; border-color:rgba(179,254,219,0.35);">
+                  🌱 Botanical Brewer
+                </span>
+              </div>
+              <h2 class="text-white font-bold text-lg mt-3">Selamat sore, Raka 👋</h2>
+              <p class="text-xs opacity-90" style="color:#E2F5F2;">Siap menikmati seduhan #kopiyangbaik hari ini?</p>
+
+              <!-- B-Beans Loyalty Card -->
+              <div onclick="setScreen('reward')" class="mt-4 p-3.5 rounded-2xl cursor-pointer shadow-sm" style="background:#E2F5F2;">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm" style="background:#0D6B4C; color:#B3FEDB;">★</div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-base" style="color:#011E13;">${state.bBeans} B-Beans</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#05452E;">3 Voucher</span>
+                      </div>
+                      <div class="text-xs" style="color:#4A6B5D;">${200 - state.bBeans} B-Beans lagi menuju Free Cup Signature!</div>
+                    </div>
+                  </div>
+                  <span class="font-bold" style="color:#0D6B4C;">›</span>
+                </div>
+                <div class="w-full h-1.5 rounded-full mt-3 overflow-hidden" style="background:#D8EFE7;">
+                  <div class="h-full rounded-full" style="width:${progressPct}%; background:#0D6B4C;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Toggle Pick Up vs Delivery & Outlet Card -->
+            <div class="px-4 mt-4">
+              <div class="p-3 rounded-2xl border shadow-2xs" style="background:#F4FCF9; border-color:rgba(130,187,172,0.4);">
+                <div class="p-1 rounded-full flex" style="background:#D8EFE7;">
+                  ${['Pick Up', 'Delivery'].map(m => {
+                    const active = state.orderMode === m;
+                    return `
+                      <button onclick="state.orderMode='${m}'; render();" class="flex-1 py-2 rounded-full text-xs font-bold transition ${active ? 'text-white shadow-2xs' : ''}" style="${active ? 'background:#0D6B4C;' : 'color:#05452E;'}">
+                        ${m === 'Pick Up' ? '🏪 Pick Up' : '🛵 Delivery'}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+                <div class="mt-2.5 flex items-center justify-between px-1">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#E2F5F2; color:#0D6B4C;">📍</div>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-semibold text-xs" style="color:#011E13;">${state.outletName}</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#05452E;">${state.outletDist}</span>
+                      </div>
+                      <div class="text-xs" style="color:#4A6B5D;">Siap diambil dalam ~5 menit • Tanpa antre</div>
+                    </div>
+                  </div>
+                  <span onclick="setScreen('menu')" class="text-xs font-bold cursor-pointer" style="color:#0D6B4C;">Menu ›</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weekly Promo Banner -->
+            <div class="px-4 mt-4">
+              <div class="p-4 rounded-2xl text-white flex items-center justify-between" style="background:#0D6B4C;">
+                <div>
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">PROMO #KOPIYANGBAIK</span>
+                  <h3 class="font-bold text-sm mt-2 leading-snug">Aren &amp; Oat Series Hemat 30%</h3>
+                  <p class="text-xs opacity-85 mt-0.5">Otomatis terpasang di keranjangmu</p>
+                </div>
+                <button onclick="setScreen('menu')" class="px-3 py-1.5 rounded-lg text-xs font-bold shrink-0" style="background:#D8EFE7; color:#05452E;">
+                  Pesan
+                </button>
+              </div>
+            </div>
+
+            <!-- Best Seller Section -->
+            <div class="px-4 mt-5 pb-4">
+              <div class="flex items-center justify-between mb-2.5">
+                <div>
+                  <h3 class="font-bold text-sm" style="color:#011E13;">Paling Favorit 🌱</h3>
+                  <p class="text-xs" style="color:#4A6B5D;">Racikan artisanal paling dicintai minggu ini</p>
+                </div>
+                <button onclick="setScreen('menu')" class="text-xs font-bold" style="color:#0D6B4C;">Lihat Semua</button>
+              </div>
+
+              <div class="space-y-2.5">
+                ${state.products.slice(0, 4).map(p => `
+                  <div onclick="openCustomizer('${p.id}')" class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition hover:opacity-95" style="background:#E2F5F2; border-color:rgba(130,187,172,0.4);">
+                    <div class="w-16 h-16 rounded-xl bg-white flex flex-col items-center justify-center shrink-0 border relative" style="border-color:rgba(130,187,172,0.35);">
+                      <div class="w-7 h-10 rounded-b-md border-t-4 border-white shadow-xs flex items-center justify-center" style="background:${p.color};">
+                        <span class="w-4 h-3 rounded-xs" style="background:#0D6B4C;"></span>
+                      </div>
+                      <span class="absolute bottom-1 right-1 text-xs">🌱</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">${p.badge}</span>
+                      <h4 class="font-semibold text-sm mt-1 truncate" style="color:#011E13;">${p.name}</h4>
+                      <p class="text-xs truncate" style="color:#4A6B5D;">${p.desc}</p>
+                      <div class="flex items-center gap-2 mt-1">
+                        <span class="font-bold text-xs" style="color:#0D6B4C;">${formatRp(p.price)}</span>
+                        <span class="text-xs" style="color:#4A6B5D;">• ${p.cal} kkal</span>
+                      </div>
+                    </div>
+                    <button class="w-8 h-8 rounded-full text-white font-bold flex items-center justify-center shrink-0" style="background:#0D6B4C;">+</button>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          ${renderBottomNav('home')}
+          ${renderModals()}
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 6: MENU SCREEN ───────────────────────────────────────────────
+    function renderMenuScreen() {
+      const cats = ['Semua', 'Signature', 'Oat Series', 'Espresso', 'Non-Coffee', 'Bakery'];
+      const filtered = state.products.filter(p => {
+        if (state.selectedCategory !== 'Semua' && p.cat !== state.selectedCategory) return false;
+        if (state.searchQuery && !p.name.toLowerCase().includes(state.searchQuery.toLowerCase())) return false;
+        return true;
+      });
+
+      return `
+        <div class="w-full h-full flex flex-col bg-white overflow-hidden">
+          ${renderStatusBar(false)}
+          <div class="px-4 pt-1 pb-2 flex items-center justify-between">
+            <div>
+              <h2 class="font-bold text-base" style="color:#011E13;">Menu Kopi B</h2>
+              <p class="text-xs font-medium" style="color:#0D6B4C;">${state.orderMode} • ${state.outletName}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold" style="background:#E2F5F2; color:#05452E;">🌱 #kopiyangbaik</span>
+          </div>
+
+          <!-- Search Bar (Matching UI Kit Board) -->
+          <div class="px-4 mb-2.5">
+            <div class="h-10 px-3 rounded-xl border flex items-center gap-2" style="background:#D8EFE7; border-color:#82BBAC;">
+              <span class="text-xs">🔍</span>
+              <input
+                type="text"
+                value="${state.searchQuery}"
+                placeholder="Cari kopi, oat series, atau pastry..."
+                oninput="state.searchQuery=this.value; render();"
+                class="flex-1 bg-transparent outline-none text-xs"
+                style="color:#011E13;"
+              />
+            </div>
+          </div>
+
+          <!-- Category Pills -->
+          <div class="px-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2">
+            ${cats.map(c => {
+              const active = state.selectedCategory === c;
+              return `
+                <button onclick="state.selectedCategory='${c}'; render();" class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition" style="background:${active ? '#0D6B4C' : '#E2F5F2'}; color:${active ? '#FFFFFF' : '#05452E'};">
+                  ${c}
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Product List -->
+          <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-2 space-y-2.5">
+            ${filtered.map(p => `
+              <div onclick="openCustomizer('${p.id}')" class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer" style="background:#E2F5F2; border-color:rgba(130,187,172,0.4);">
+                <div class="w-16 h-16 rounded-xl bg-white flex items-center justify-center shrink-0 border" style="border-color:rgba(130,187,172,0.35);">
+                  <div class="w-7 h-10 rounded-b-md border-t-4 border-white flex items-center justify-center" style="background:${p.color};">
+                    <span class="w-4 h-3 rounded-xs" style="background:#0D6B4C;"></span>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">${p.badge}</span>
+                    <span class="text-xs" style="color:#4A6B5D;">${p.cal} kkal</span>
+                  </div>
+                  <h4 class="font-semibold text-sm mt-1 truncate" style="color:#011E13;">${p.name}</h4>
+                  <p class="text-xs truncate" style="color:#4A6B5D;">${p.desc}</p>
+                  <div class="flex items-center justify-between mt-1.5">
+                    <span class="font-bold text-xs" style="color:#0D6B4C;">${formatRp(p.price)}</span>
+                    <button class="px-3 py-1 rounded-full text-xs font-semibold text-white" style="background:#0D6B4C;">+ Pilih</button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          ${renderBottomNav('menu')}
+          ${renderModals()}
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 7: ORDER TRACKER & E-RECEIPT ─────────────────────────────────
+    function renderOrderScreen() {
+      const stages = [
+        { title: 'Pesanan Diterima', sub: 'Outlet Kopi B telah menerima pesananmu', pct: 35 },
+        { title: 'Barista Sedang Menyeduh ☕', sub: 'Biji kopi Arabica Gayo sedang diekstraksi', pct: 70 },
+        { title: 'Siap Diambil di Pick-Up Bar ✨', sub: 'Tunjukkan kode KB-209 kepada barista', pct: 100 }
+      ];
+      const st = stages[state.orderStageIndex];
+
+      return `
+        <div class="w-full h-full flex flex-col bg-white overflow-hidden">
+          ${renderStatusBar(false)}
+          <div class="px-4 py-2">
+            <h2 class="font-bold text-base" style="color:#011E13;">Pesanan Saya</h2>
+          </div>
+
+          <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-2 space-y-4">
+            <div class="p-4 rounded-2xl border-[1.5px] shadow-xs" style="background:#E2F5F2; border-color:#0D6B4C;">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold text-white" style="background:#0D6B4C;">Pick Up • Kode KB-209</span>
+                <span class="text-xs" style="color:#4A6B5D;">Hari ini, 16:40 WIB</span>
+              </div>
+              <h3 class="font-bold text-base mt-3" style="color:#011E13;">${st.title}</h3>
+              <p class="text-xs mt-0.5" style="color:#05452E;">${st.sub}</p>
+
+              <div class="w-full h-2 rounded-full mt-3 overflow-hidden" style="background:#D8EFE7;">
+                <div class="h-full rounded-full transition-all duration-300" style="width:${st.pct}%; background:#0D6B4C;"></div>
+              </div>
+
+              <div class="mt-3 pt-3 border-t text-xs space-y-1" style="border-color:#82BBAC; color:#011E13;">
+                <div class="font-semibold">📍 ${state.outletName}</div>
+                <div>1x Pandan Cloud Cold Brew (Iced • Less Sugar)</div>
+                <div>1x Butter Almond Croissant (Fresh Baked)</div>
+              </div>
+
+              <div class="mt-3 flex gap-2">
+                <button onclick="state.showReceiptModal=true; render();" class="flex-1 py-2 rounded-xl border text-xs font-semibold" style="border-color:#4A6B5D; color:#05452E;">
+                  🧾 E-Receipt
+                </button>
+                <button onclick="state.orderStageIndex=(state.orderStageIndex+1)%3; render();" class="flex-[1.6] py-2 rounded-xl text-white text-xs font-semibold" style="background:#0D6B4C;">
+                  Simulasi Tahap Barista ›
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl border" style="background:#F4FCF9; border-color:#82BBAC;">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-xs" style="color:#011E13;">Kopi B Menteng Botanical</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#05452E;">Selesai • +12 Beans</span>
+              </div>
+              <p class="text-xs mt-1" style="color:#4A6B5D;">2x Aren Botanical Latte (Iced • Normal Sugar)</p>
+              <div class="flex items-center justify-between mt-2.5">
+                <span class="font-bold text-xs" style="color:#0D6B4C;">Total: Rp 53.000</span>
+                <button onclick="setScreen('menu')" class="px-3 py-1 rounded-lg text-xs font-semibold" style="background:#D8EFE7; color:#05452E;">↻ Pesan Lagi</button>
+              </div>
+            </div>
+          </div>
+
+          ${renderBottomNav('order')}
+          ${renderModals()}
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 8: REWARD & B-BEANS ──────────────────────────────────────────
+    function renderRewardScreen() {
+      return `
+        <div class="w-full h-full flex flex-col bg-white overflow-hidden">
+          ${renderStatusBar(false)}
+          <div class="px-4 py-2">
+            <h2 class="font-bold text-base" style="color:#011E13;">Reward &amp; B-Beans</h2>
+          </div>
+
+          <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-2 space-y-4">
+            <!-- B-Beans Hero -->
+            <div class="p-4 rounded-2xl text-white" style="background:linear-gradient(135deg,#05452E,#0D6B4C);">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">BOTANICAL BREWER</span>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-3xl font-bold">${state.bBeans}</span>
+                <span class="text-xs" style="color:#B3FEDB;">/ 200 B-Beans</span>
+              </div>
+              <div class="w-full h-2 rounded-full mt-3 overflow-hidden" style="background:#05452E;">
+                <div class="h-full rounded-full" style="width:${(state.bBeans/200)*100}%; background:#28E5A7;"></div>
+              </div>
+              <p class="text-xs mt-2 opacity-90">Kumpulkan ${200 - state.bBeans} B-Beans lagi untuk klaim 1 Cup Signature Gratis!</p>
+            </div>
+
+            <!-- 8-Cup Stamp Card -->
+            <div class="p-4 rounded-2xl border" style="background:#E2F5F2; border-color:#82BBAC;">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-xs" style="color:#011E13;">Stamp Card #kopiyangbaik</span>
+                <span class="font-bold text-xs" style="color:#0D6B4C;">${state.stamps}/8 Cup</span>
+              </div>
+              <div class="grid grid-cols-8 gap-1.5 mt-2">
+                ${[0,1,2,3,4,5,6,7].map(i => `
+                  <div class="h-8 rounded-full flex items-center justify-center text-xs border" style="background:${i < state.stamps ? '#0D6B4C' : '#FFFFFF'}; color:${i < state.stamps ? '#FFFFFF' : '#7CBCA4'}; border-color:#7CBCA4;">
+                    ${i === 7 ? '🎁' : '☕'}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Vouchers -->
+            <div class="space-y-2.5">
+              <div class="p-3.5 rounded-2xl border" style="background:#F4FCF9; border-color:#0D6B4C;">
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">KOPIYANGBAIK</span>
+                <h4 class="font-bold text-sm mt-1.5" style="color:#011E13;">Diskon 30% Signature &amp; Oat Series</h4>
+                <p class="text-xs" style="color:#4A6B5D;">Potongan Rp 12.000 otomatis aktif di keranjang</p>
+              </div>
+              <div class="p-3.5 rounded-2xl border" style="background:#F4FCF9; border-color:#82BBAC;">
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">TUKAR 100 BEANS</span>
+                <h4 class="font-bold text-sm mt-1.5" style="color:#011E13;">Gratis 1 Cup Signature Kopi B</h4>
+                <p class="text-xs" style="color:#4A6B5D;">Bebas pilih Aren Botanical atau Pandan Cloud</p>
+              </div>
+            </div>
+          </div>
+
+          ${renderBottomNav('reward')}
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 9: ACCOUNT SCREEN ────────────────────────────────────────────
+    function renderAccountScreen() {
+      return `
+        <div class="w-full h-full flex flex-col bg-white overflow-hidden">
+          ${renderStatusBar(false)}
+          <div class="px-4 py-2">
+            <h2 class="font-bold text-base" style="color:#011E13;">Akun Saya</h2>
+          </div>
+
+          <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-2 space-y-3.5">
+            <div class="p-4 rounded-2xl flex items-center gap-3" style="background:#E2F5F2;">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg" style="background:#0D6B4C;">R</div>
+              <div>
+                <h3 class="font-bold text-sm" style="color:#011E13;">Raka Pratama</h3>
+                <p class="text-xs font-semibold" style="color:#0D6B4C;">Botanical Brewer • ${state.bBeans} B-Beans</p>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl border flex items-center gap-3" style="background:rgba(179,254,219,0.35); border-color:#1EB986;">
+              <span class="text-2xl">🌱</span>
+              <div>
+                <h4 class="font-bold text-xs" style="color:#011E13;">14 Cup Plastik Dihemat</h4>
+                <p class="text-xs" style="color:#05452E;">Gerakan ramah lingkungan #kopiyangbaik</p>
+              </div>
+            </div>
+
+            <div class="space-y-2 pt-1">
+              <button onclick="setScreen('welcome')" class="w-full py-2.5 px-4 rounded-xl border text-xs font-semibold flex items-center justify-between" style="border-color:#4A6B5D; color:#05452E;">
+                <span>🔐 Uji Alur Masuk / Pendaftaran (3 Screen)</span>
+                <span>›</span>
+              </button>
+              <button onclick="setScreen('uikit')" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-between" style="background:#D8EFE7; color:#05452E;">
+                <span>🎨 Lihat Design System UI Kit Board</span>
+                <span>›</span>
+              </button>
+              <button onclick="setScreen('splash')" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white flex items-center justify-between" style="background:#0D6B4C;">
+                <span>✨ Putar Ulang Splash Screen Kopi B</span>
+                <span>›</span>
+              </button>
+            </div>
+          </div>
+
+          ${renderBottomNav('account')}
+        </div>
+      `;
+    }
+
+    // ─── SCREEN 10: DESIGN SYSTEM UI KIT BOARD (Matching Uploaded Image 1) ──
+    function renderUiKitScreen() {
+      return `
+        <div class="w-full h-full flex flex-col overflow-hidden" style="background:#C8EBD9;">
+          ${renderStatusBar(false)}
+          <div class="px-4 py-2 flex items-center justify-between" style="background:#0D6B4C; color:#FFFFFF;">
+            <span class="font-bold text-sm">Design System Board (#kopiyangbaik)</span>
+            <button onclick="setScreen('home')" class="px-2.5 py-1 rounded-md text-xs font-bold" style="background:#28E5A7; color:#011E13;">Ke Home ›</button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto no-scrollbar p-3.5 space-y-3">
+            <!-- 4 Color Swatches -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="rounded-xl overflow-hidden text-white flex flex-col justify-between h-20" style="background:#0D6B4C;">
+                <div class="p-2.5 flex justify-between text-xs font-bold"><span>Primary</span><span>#0D6B4C</span></div>
+                <div class="h-5 grid grid-cols-8">
+                  <span style="background:#021810"></span><span style="background:#053524"></span><span style="background:#095239"></span><span style="background:#0D6B4C"></span><span style="background:#21946E"></span><span style="background:#56BFA0"></span><span style="background:#9EE5CE"></span><span style="background:#FFFFFF"></span>
+                </div>
+              </div>
+              <div class="rounded-xl overflow-hidden flex flex-col justify-between h-20" style="background:#28E5A7; color:#011E13;">
+                <div class="p-2.5 flex justify-between text-xs font-bold"><span>Secondary</span><span>#28E5A7</span></div>
+                <div class="h-5 grid grid-cols-8">
+                  <span style="background:#022016"></span><span style="background:#085038"></span><span style="background:#128962"></span><span style="background:#1EB986"></span><span style="background:#28E5A7"></span><span style="background:#6CF0C4"></span><span style="background:#B3FEDB"></span><span style="background:#FFFFFF"></span>
+                </div>
+              </div>
+              <div class="rounded-xl overflow-hidden flex flex-col justify-between h-20" style="background:#7CBCA4; color:#011E13;">
+                <div class="p-2.5 flex justify-between text-xs font-bold"><span>Tertiary</span><span>#7CBCA4</span></div>
+                <div class="h-5 grid grid-cols-8">
+                  <span style="background:#081C15"></span><span style="background:#1B4436"></span><span style="background:#356E5A"></span><span style="background:#56967F"></span><span style="background:#7CBCA4"></span><span style="background:#A6D5C3"></span><span style="background:#D3EDE3"></span><span style="background:#FFFFFF"></span>
+                </div>
+              </div>
+              <div class="rounded-xl overflow-hidden text-white flex flex-col justify-between h-20" style="background:#011E13;">
+                <div class="p-2.5 flex justify-between text-xs font-bold"><span>Neutral</span><span>#011E13</span></div>
+                <div class="h-5 grid grid-cols-8">
+                  <span style="background:#011E13"></span><span style="background:#1B352B"></span><span style="background:#3B5249"></span><span style="background:#5E726A"></span><span style="background:#85968F"></span><span style="background:#B0BEB8"></span><span style="background:#DAE2DF"></span><span style="background:#FFFFFF"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Typography Cards -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="p-2.5 rounded-xl" style="background:#E2F5F2;">
+                <div class="text-xs" style="color:#4A6B5D;">Headline</div>
+                <div class="text-2xl font-bold text-right mt-2" style="color:#011E13;">Aa</div>
+              </div>
+              <div class="p-2.5 rounded-xl" style="background:#E2F5F2;">
+                <div class="text-xs" style="color:#4A6B5D;">Body</div>
+                <div class="text-2xl font-normal text-right mt-2" style="color:#011E13;">Aa</div>
+              </div>
+              <div class="p-2.5 rounded-xl" style="background:#E2F5F2;">
+                <div class="text-xs" style="color:#4A6B5D;">Label</div>
+                <div class="text-2xl font-medium text-right mt-2" style="color:#011E13;">Aa</div>
+              </div>
+            </div>
+
+            <!-- 4 Buttons -->
+            <div class="p-3 rounded-xl grid grid-cols-2 gap-2" style="background:#E2F5F2;">
+              <button class="py-2 rounded-lg text-xs font-semibold text-white" style="background:#0D6B4C;">Primary</button>
+              <button class="py-2 rounded-lg text-xs font-semibold" style="background:#D8EFE7; color:#05452E;">Secondary</button>
+              <button class="py-2 rounded-lg text-xs font-semibold text-white" style="background:#011E13;">Inverted</button>
+              <button class="py-2 rounded-lg text-xs font-semibold border" style="border-color:#4A6B5D; color:#05452E;">Outlined</button>
+            </div>
+
+            <!-- Action Pills & Circle Buttons -->
+            <div class="p-3 rounded-xl flex items-center justify-between" style="background:#E2F5F2;">
+              <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs" style="background:#265C4B;">✎</span>
+              <span class="px-3.5 py-2 rounded-lg text-white text-xs font-semibold" style="background:#0D6B4C;">✎ Label</span>
+              <div class="flex items-center gap-1.5">
+                <span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs" style="background:#0D6B4C;">✨</span>
+                <span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs" style="background:#0D6B4C;">🏷️</span>
+                <span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs" style="background:#C62828;">🗑️</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── MODALS (Drink Customizer, Checkout, E-Receipt) ──────────────────────
+    function openCustomizer(prodId) {
+      state.customizingProduct = state.products.find(p => p.id === prodId) || null;
+      render();
+    }
+
+    function addCustomToCart() {
+      const p = state.customizingProduct;
+      if (!p) return;
+      const extra = (state.custMilk === 'Oat Milk 🌾' ? 6000 : 0) + (state.custSize === 'Large' ? 5000 : 0);
+      state.cart.push({
+        id: p.id + Date.now(),
+        name: p.name,
+        price: p.price + extra,
+        qty: 1,
+        summary: `${state.custTemp} • ${state.custSize} • ${state.custSugar} • ${state.custMilk}`
+      });
+      state.customizingProduct = null;
+      render();
+    }
+
+    function openCheckout() {
+      state.showCheckoutModal = true;
+      render();
+    }
+
+    function completeCheckout() {
+      state.cart = [];
+      state.bBeans += 15;
+      state.stamps = Math.min(8, state.stamps + 1);
+      state.orderStageIndex = 0;
+      state.showCheckoutModal = false;
+      setScreen('order');
+    }
+
+    function renderModals() {
+      if (state.customizingProduct) {
+        const p = state.customizingProduct;
+        const extra = (state.custMilk === 'Oat Milk 🌾' ? 6000 : 0) + (state.custSize === 'Large' ? 5000 : 0);
+        return `
+          <div class="absolute inset-0 bg-black/45 z-30 flex flex-col justify-end">
+            <div class="bg-white rounded-t-3xl p-4 space-y-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">${p.badge}</span>
+                  <h3 class="font-bold text-base mt-1" style="color:#011E13;">${p.name}</h3>
+                  <p class="text-xs" style="color:#4A6B5D;">${p.desc}</p>
+                </div>
+                <button onclick="state.customizingProduct=null; render();" class="text-sm font-bold px-2">✕</button>
+              </div>
+
+              <div>
+                <div class="text-xs font-bold mb-1.5" style="color:#011E13;">Temperatur &amp; Ukuran</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  ${['Iced ❄️', 'Hot ☕'].map(t => `
+                    <button onclick="state.custTemp='${t}'; render();" class="py-1.5 rounded-lg text-xs font-semibold border" style="background:${state.custTemp===t?'#0D6B4C':'#E2F5F2'}; color:${state.custTemp===t?'#FFF':'#05452E'}; border-color:#82BBAC;">${t}</button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div>
+                <div class="text-xs font-bold mb-1.5" style="color:#011E13;">Level Gula (#kopiyangbaik)</div>
+                <div class="grid grid-cols-3 gap-1.5">
+                  ${['Normal Sugar', 'Less Sugar', 'No Sugar'].map(s => `
+                    <button onclick="state.custSugar='${s}'; render();" class="py-1.5 rounded-lg text-xs font-semibold border" style="background:${state.custSugar===s?'#0D6B4C':'#E2F5F2'}; color:${state.custSugar===s?'#FFF':'#05452E'}; border-color:#82BBAC;">${s}</button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div>
+                <div class="text-xs font-bold mb-1.5" style="color:#011E13;">Pilihan Susu</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  ${['Fresh Milk', 'Oat Milk 🌾'].map(m => `
+                    <button onclick="state.custMilk='${m}'; render();" class="py-1.5 rounded-lg text-xs font-semibold border" style="background:${state.custMilk===m?'#0D6B4C':'#E2F5F2'}; color:${state.custMilk===m?'#FFF':'#05452E'}; border-color:#82BBAC;">${m}</button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <button onclick="addCustomToCart()" class="w-full py-3 rounded-xl text-white font-bold text-xs shadow-md" style="background:#0D6B4C;">
+                + Tambah ke Keranjang • ${formatRp(p.price + extra)}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.showCheckoutModal) {
+        const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
+        const discount = subtotal >= 28000 ? 12000 : 0;
+        const total = Math.max(0, subtotal - discount - (state.tumblerEco ? 5000 : 0));
+        return `
+          <div class="absolute inset-0 bg-black/45 z-30 flex flex-col justify-end">
+            <div class="bg-white rounded-t-3xl p-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-base" style="color:#011E13;">Ringkasan Pesanan (${state.orderMode})</h3>
+                <button onclick="state.showCheckoutModal=false; render();" class="text-sm font-bold px-2">✕</button>
+              </div>
+              <div class="space-y-2 max-h-40 overflow-y-auto no-scrollbar">
+                ${state.cart.map((item, idx) => `
+                  <div class="p-2.5 rounded-xl flex items-center justify-between" style="background:#E2F5F2;">
+                    <div>
+                      <div class="font-bold text-xs" style="color:#011E13;">${item.name}</div>
+                      <div class="text-xs" style="color:#4A6B5D;">${item.summary}</div>
+                      <div class="font-bold text-xs mt-0.5" style="color:#0D6B4C;">${formatRp(item.price)}</div>
+                    </div>
+                    <button onclick="state.cart.splice(${idx},1); if(!state.cart.length) state.showCheckoutModal=false; render();" class="w-7 h-7 rounded-full text-white text-xs flex items-center justify-center" style="background:#C62828;">🗑️</button>
+                  </div>
+                `).join('')}
+              </div>
+              <label class="p-2.5 rounded-xl border flex items-center justify-between cursor-pointer text-xs" style="background:#F4FCF9; border-color:#82BBAC;">
+                <span>🌱 Bawa Tumbler Sendiri (-Rp 5.000)</span>
+                <input type="checkbox" ${state.tumblerEco ? 'checked' : ''} onchange="state.tumblerEco=this.checked; render();" />
+              </label>
+              <div class="text-xs space-y-1 pt-1 border-t" style="border-color:#82BBAC;">
+                <div class="flex justify-between"><span>Subtotal</span><span>${formatRp(subtotal)}</span></div>
+                <div class="flex justify-between font-semibold" style="color:#1EB986;"><span>Promo KOPIYANGBAIK</span><span>-${formatRp(discount)}</span></div>
+                <div class="flex justify-between font-bold text-sm pt-1" style="color:#011E13;"><span>Total (GoPay)</span><span>${formatRp(total)}</span></div>
+              </div>
+              <button onclick="completeCheckout()" class="w-full py-3 rounded-xl text-white font-bold text-xs" style="background:#0D6B4C;">
+                Bayar &amp; Seduh Sekarang • ${formatRp(total)}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.showReceiptModal) {
+        return `
+          <div class="absolute inset-0 bg-black/45 z-30 flex flex-col justify-end">
+            <div class="bg-white rounded-t-3xl p-4 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-base" style="color:#011E13;">E-Receipt #kopiyangbaik</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">Kode: KB-209</span>
+              </div>
+              <p class="text-xs" style="color:#4A6B5D;">ORD-9841 • ${state.outletName}</p>
+              <div class="border-t border-b py-2 text-xs space-y-1" style="border-color:#82BBAC;">
+                <div class="flex justify-between"><span>1x Pandan Cloud Cold Brew</span><span>Rp 33.000</span></div>
+                <div class="flex justify-between"><span>1x Butter Almond Croissant</span><span>Rp 29.000</span></div>
+                <div class="flex justify-between font-semibold" style="color:#1EB986;"><span>Voucher KOPIYANGBAIK</span><span>-Rp 12.000</span></div>
+              </div>
+              <div class="flex justify-between font-bold text-sm"><span>Total Dibayar (GoPay)</span><span style="color:#0D6B4C;">Rp 50.000</span></div>
+              <button onclick="state.showReceiptModal=false; render();" class="w-full py-2.5 rounded-xl text-white font-bold text-xs" style="background:#0D6B4C;">Tutup Struk Digital</button>
+            </div>
+          </div>
+        `;
+      }
+
+      return '';
+    }
+
+    function updateFlowInfo() {
+      const descriptions = {
+        splash: '<b>1. Splash Screen:</b> Menampilkan gradien gelombang hijau zamrud diagonal khas Fore dengan logo putih <b>Kopi B (#kopiyangbaik)</b> di tengah layar. Otomatis berpindah ke Onboarding setelah 2.6 detik.',
+        welcome: '<b>2. Onboarding (Screen 1):</b> Komposisi 2 cup es kopi berlogo Kopi B + 2 donat/pastry, indikator 3 titik, pemilih bahasa Indonesia, tombol pill <b>"Masuk"</b> (#0D6B4C), dan <b>"Lewati tahap ini"</b>.',
+        phone: '<b>3. Masuk No. Telepon (Screen 2):</b> Kode negara <code>+62</code> dan input telepon. Tombol <b>"Lanjutkan"</b> otomatis aktif menjadi hijau <code>#0D6B4C</code> saat ≥ 8 digit dimasukkan.',
+        pin: '<b>4. PIN Kopi B (Screen 3):</b> 6 garis bawah PIN dengan kursor vertikal hijau berkedip dan keypad angka di bagian bawah layar.',
+        home: '<b>5. Home Screen:</b> Header Kopi B, kartu loyalitas B-Beans, toggle Pick Up vs Delivery, banner promo, dan Best Seller.',
+        menu: '<b>6. Menu Screen:</b> Pencarian, filter kategori, kustomisasi minuman (Es/Panas, Level Gula, Oat Milk), dan Floating Cart.',
+        order: '<b>7. Order Screen:</b> Pelacakan proses barista (Diterima → Menyeduh → Siap Diambil) & E-Receipt.',
+        reward: '<b>8. Reward Screen:</b> Progress B-Beans, Stamp Card 8-Cup, dan klaim voucher.',
+        account: '<b>9. Akun Screen:</b> Profil member, Eco-Tumbler tracker, dan pintasan ke alur Login / UI Kit.',
+        uikit: '<b>Design System UI Kit Board:</b> Referensi visual warna, tipografi Plus Jakarta Sans, 4 varian tombol, search bar, dan ikon.'
+      };
+      document.getElementById('flowInfoBox').innerHTML = descriptions[state.screen] || '';
+
+      document.querySelectorAll('.scr-pill').forEach(btn => {
+        const active = btn.getAttribute('data-scr') === state.screen;
+        btn.style.background = active ? '#0D6B4C' : '#E2F5F2';
+        btn.style.color = active ? '#FFFFFF' : '#05452E';
+      });
+    }
+
+    function render() {
+      const vp = document.getElementById('phoneViewport');
+      if (!vp) return;
+      switch (state.screen) {
+        case 'splash': vp.innerHTML = renderSplashScreen(); break;
+        case 'welcome': vp.innerHTML = renderWelcomeScreen(); break;
+        case 'phone': vp.innerHTML = renderPhoneLoginScreen(); break;
+        case 'pin': vp.innerHTML = renderPinScreen(); break;
+        case 'home': vp.innerHTML = renderHomeScreen(); break;
+        case 'menu': vp.innerHTML = renderMenuScreen(); break;
+        case 'order': vp.innerHTML = renderOrderScreen(); break;
+        case 'reward': vp.innerHTML = renderRewardScreen(); break;
+        case 'account': vp.innerHTML = renderAccountScreen(); break;
+        case 'uikit': vp.innerHTML = renderUiKitScreen(); break;
+      }
+      updateFlowInfo();
+    }
+
+    prepareTransparentLogo();
+    setScreen('splash');
+  </script>
+</body>
+</html>
