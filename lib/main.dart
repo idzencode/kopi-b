@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/auth_onboarding_screens.dart';
 import 'features/shared/state/kopi_app_state.dart';
 import 'features/shell/main_shell.dart';
 import 'features/splash/splash_screen.dart';
@@ -37,10 +36,10 @@ class _KopiBAppState extends State<KopiBApp> {
   }
 }
 
-/// Pengatur alur transisi otomatis:
+/// Pengatur alur transisi:
 /// 1. [SplashScreen] (Gelombang hijau zamrud + Logo putih Kopi B)
-/// 2. [WelcomeOnboardingScreen] -> [PhoneLoginScreen] -> [PinVerificationScreen]
-/// 3. [MainShell] (Home Screen + 5-Tab Bottom Navigation)
+/// 2. Langsung menuju [MainShell] (Home Screen + 5-Tab Bottom Navigation)
+/// 3. Halaman Onboarding/Login/Register dibuka saat pengguna ingin masuk/daftar (misal klik "Login Sekarang").
 class _AppFlowCoordinator extends StatefulWidget {
   const _AppFlowCoordinator({required this.appState});
 
@@ -52,17 +51,11 @@ class _AppFlowCoordinator extends StatefulWidget {
 
 enum _AppStage {
   splash,
-  onboardingAuth,
   mainHome,
 }
 
 class _AppFlowCoordinatorState extends State<_AppFlowCoordinator> {
   _AppStage _stage = _AppStage.splash;
-
-  void _goToOnboarding() {
-    if (!mounted || _stage != _AppStage.splash) return;
-    setState(() => _stage = _AppStage.onboardingAuth);
-  }
 
   void _goToMainHome([String? phoneNumber]) {
     if (!mounted) return;
@@ -78,12 +71,7 @@ class _AppFlowCoordinatorState extends State<_AppFlowCoordinator> {
       child: switch (_stage) {
         _AppStage.splash => SplashScreen(
             key: const ValueKey('splash'),
-            onFinished: _goToOnboarding,
-          ),
-        _AppStage.onboardingAuth => WelcomeOnboardingScreen(
-            key: const ValueKey('onboarding'),
-            onSkipToHome: _goToMainHome,
-            onLoginSuccess: _goToMainHome,
+            onFinished: _goToMainHome,
           ),
         _AppStage.mainHome => MainShell(
             key: const ValueKey('main_shell'),

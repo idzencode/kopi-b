@@ -35,8 +35,8 @@ class MainShell extends StatelessWidget {
           AccountScreen(appState: appState),
         ];
 
-        final showFloatingCart = appState.cart.isNotEmpty &&
-            (appState.currentTabIndex == 0 || appState.currentTabIndex == 1);
+        final showFloatingCart =
+            appState.cart.isNotEmpty && appState.currentTabIndex == 1;
 
         return Scaffold(
           backgroundColor: AppColors.background,

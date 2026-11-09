@@ -41,15 +41,24 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (routeCtx) => WelcomeOnboardingScreen(
-          onSkipToHome: () => Navigator.of(routeCtx).pop(),
+          onSkipToHome: () {
+            if (routeCtx.mounted && Navigator.of(routeCtx).canPop()) {
+              Navigator.of(routeCtx).pop();
+            }
+          },
           onLoginSuccess: (phone) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: AppColors.primary,
-                behavior: SnackBarBehavior.floating,
-                content: Text('Selamat datang kembali di Kopi B ($phone)!'),
-              ),
-            );
+            if (routeCtx.mounted && Navigator.of(routeCtx).canPop()) {
+              Navigator.of(routeCtx).pop();
+            }
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: AppColors.primary,
+                  behavior: SnackBarBehavior.floating,
+                  content: Text('Selamat datang kembali di Kopi B ($phone)!'),
+                ),
+              );
+            }
           },
         ),
       ),

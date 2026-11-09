@@ -248,16 +248,7 @@ class KopiAppState extends ChangeNotifier {
 
     appliedVoucher = vouchers.first;
 
-    // 1 item awal di keranjang agar Floating Cart & Checkout langsung dapat dicoba
-    cart.add(
-      CartItem(
-        product: products.first,
-        quantity: 1,
-        isIced: true,
-        sugarLevel: 'Less Sugar',
-        milkOption: 'Fresh Milk',
-      ),
-    );
+    // Keranjang awal kosong (tidak memunculkan floating checkout bar)
 
     // 1 pesanan aktif sedang diseduh barista & 1 riwayat pesanan selesai
     orders.addAll([

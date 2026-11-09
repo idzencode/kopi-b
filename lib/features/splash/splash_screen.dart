@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/widgets/kopi_logo.dart';
 
 /// Splash Screen "Kopi B" (#kopiyangbaik)
 /// Mengadopsi estetika organik Fore Coffee dengan gelombang cahaya diagonal
@@ -34,15 +33,16 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1100),
+      duration: const Duration(milliseconds: 1300),
     );
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.85, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.65, curve: Curves.easeIn),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.90, end: 1.0).animate(
+    // Animasi logo dari besar (1.75x) ke ukuran normal (1.0x) dengan kurva melambat halus
+    _scaleAnimation = Tween<double>(begin: 1.75, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.easeOutCubic,
@@ -70,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final logoWidth = (screenWidth * 0.68).clamp(220.0, 310.0);
+    final logoWidth = (screenWidth * 0.52).clamp(180.0, 240.0);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -93,19 +93,17 @@ class _SplashScreenState extends State<SplashScreen>
                 painter: _SilkyForestWavePainter(),
               ),
 
-              // 2. Logo Putih Kopi B (#kopiyangbaik) Tepat di Tengah Layar
+              // 2. Logo Kopi B (assets/images/logo.png) di Tengah Layar dengan Animasi Besar ke Kecil
               Center(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: ScaleTransition(
                     scale: _scaleAnimation,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: KopiBLogo(
-                        width: logoWidth,
-                        height: logoWidth * 0.56,
-                        transparentBackground: true,
-                      ),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: logoWidth,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                 ),
