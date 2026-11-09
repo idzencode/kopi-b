@@ -755,14 +755,14 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     super.dispose();
   }
 
-  void _proceedToPin() {
+  void _proceedToOtp() {
     if (!_isValidPhone) return;
-    final fullPhone = '$_countryCode${_phoneController.text.trim()}';
+    final fullPhone = '$_countryCode ${_phoneController.text.trim()}';
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PinVerificationScreen(
+        builder: (_) => OtpVerificationScreen(
           phoneNumber: fullPhone,
-          onPinVerified: () => widget.onAuthenticated(fullPhone),
+          onOtpVerified: () => widget.onAuthenticated(fullPhone),
         ),
       ),
     );
@@ -876,7 +876,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                           LengthLimitingTextInputFormatter(13),
                         ],
                         onChanged: (_) => setState(() {}),
-                        onSubmitted: (_) => _proceedToPin(),
+                        onSubmitted: (_) => _proceedToOtp(),
                         style: AppTextStyles.heading2.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -921,7 +921,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: _isValidPhone ? _proceedToPin : null,
+                  onPressed: _isValidPhone ? _proceedToOtp : null,
                   child: Text(
                     'Lanjutkan',
                     style: AppTextStyles.bodyMedium.copyWith(
@@ -976,29 +976,31 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════
-/// SCREEN 3: PIN KOPI B (Sesuai gambar referensi ke-3)
-/// Menampilkan judul "PIN Kopi B", instruksi "Masukkan PIN", 6 garis bawah
-/// dengan kursor vertikal hijau berkedip, tombol "Lupa PIN", dan keypad angka
-/// bergaya modern di bagian bawah layar.
+/// SCREEN 3: VERIFIKASI KODE OTP KOPI B
+/// Menampilkan judul "Kode OTP", instruksi "Masukkan Kode OTP", nomor tujuan,
+/// 6 digit garis bawah dengan angka OTP & kursor berkedip, hitung mundur
+/// kirim ulang OTP, dan keypad numerik di bagian bawah layar.
 /// ═══════════════════════════════════════════════════════════════════════════
-class PinVerificationScreen extends StatefulWidget {
-  const PinVerificationScreen({
+class OtpVerificationScreen extends StatefulWidget {
+  const OtpVerificationScreen({
     super.key,
     required this.phoneNumber,
-    required this.onPinVerified,
+    required this.onOtpVerified,
   });
 
   final String phoneNumber;
-  final VoidCallback onPinVerified;
+  final VoidCallback onOtpVerified;
 
   @override
-  State<PinVerificationScreen> createState() => _PinVerificationScreenState();
+  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
 
-class _PinVerificationScreenState extends State<PinVerificationScreen> {
-  String _pin = '';
+class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
+  String _otp = '';
   bool _cursorVisible = true;
   Timer? _cursorTimer;
+  Timer? _countdownTimer;
+  int _resendCountdown = 59;
 
   @override
   void initState() {
@@ -1008,33 +1010,62 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
         setState(() => _cursorVisible = !_cursorVisible);
       }
     });
+
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _resendCountdown = 59;
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_resendCountdown > 0) {
+        setState(() => _resendCountdown--);
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   @override
   void dispose() {
     _cursorTimer?.cancel();
+    _countdownTimer?.cancel();
     super.dispose();
   }
 
   void _onDigitPressed(String digit) {
-    if (_pin.length >= 6) return;
+    if (_otp.length >= 6) return;
     setState(() {
-      _pin += digit;
+      _otp += digit;
     });
-    if (_pin.length == 6) {
+    if (_otp.length == 6) {
       Future<void>.delayed(const Duration(milliseconds: 240), () {
         if (mounted) {
-          widget.onPinVerified();
+          widget.onOtpVerified();
         }
       });
     }
   }
 
   void _onBackspace() {
-    if (_pin.isEmpty) return;
+    if (_otp.isEmpty) return;
     setState(() {
-      _pin = _pin.substring(0, _pin.length - 1);
+      _otp = _otp.substring(0, _otp.length - 1);
     });
+  }
+
+  void _resendOtp() {
+    _startCountdown();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          'Kode OTP baru telah dikirimkan ke nomor ${widget.phoneNumber}',
+        ),
+      ),
+    );
   }
 
   @override
@@ -1055,7 +1086,7 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
           ),
         ),
         title: Text(
-          'PIN Kopi B',
+          'Kode OTP',
           style: AppTextStyles.heading2.copyWith(
             color: AppColors.primaryDark,
             fontSize: 17,
@@ -1064,7 +1095,7 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
       ),
       body: Column(
         children: [
-          // Area Atas: Judul, Subjudul, 6 Garis PIN, Lupa PIN
+          // Area Atas: Judul, Subjudul, 6 Garis Input Kode OTP, Kirim Ulang
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -1072,31 +1103,45 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
                 children: [
                   const SizedBox(height: 34),
                   Text(
-                    'Masukkan PIN',
+                    'Masukkan Kode OTP',
                     style: AppTextStyles.heading2.copyWith(
                       color: AppColors.primaryDark,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Masukkan nomor PIN yang kamu daftarkan pada aplikasi\nKopi B',
+                  const SizedBox(height: 14),
+                  RichText(
                     textAlign: TextAlign.center,
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13.5,
-                      height: 1.45,
+                    text: TextSpan(
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 13.5,
+                        height: 1.45,
+                      ),
+                      children: [
+                        const TextSpan(
+                          text:
+                              'Masukkan 6 digit kode OTP yang kami kirimkan ke nomor\n',
+                        ),
+                        TextSpan(
+                          text: widget.phoneNumber,
+                          style: const TextStyle(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 44),
 
-                  // 6 Slot Garis Bawah PIN (_ _ _ _ _ _)
+                  // 6 Slot Garis Bawah OTP (_ _ _ _ _ _)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(6, (index) {
-                      final isFilled = index < _pin.length;
-                      final isCurrent = index == _pin.length;
+                      final isFilled = index < _otp.length;
+                      final isCurrent = index == _otp.length;
 
                       return Expanded(
                         child: Padding(
@@ -1108,18 +1153,18 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
                                 height: 38,
                                 child: Center(
                                   child: isFilled
-                                      ? Container(
-                                          width: 12,
-                                          height: 12,
-                                          decoration: const BoxDecoration(
-                                            color: AppColors.primaryDark,
-                                            shape: BoxShape.circle,
+                                      ? Text(
+                                          _otp[index],
+                                          style: AppTextStyles.heading1.copyWith(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.neutralDark,
                                           ),
                                         )
                                       : (isCurrent && _cursorVisible)
                                           ? Container(
                                               width: 2.2,
-                                              height: 32,
+                                              height: 28,
                                               color: AppColors.primaryDark,
                                             )
                                           : const SizedBox.shrink(),
@@ -1128,7 +1173,9 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
                               const SizedBox(height: 4),
                               Container(
                                 height: isCurrent ? 2.4 : 1.5,
-                                color: AppColors.primaryDark,
+                                color: isFilled
+                                    ? AppColors.primary
+                                    : AppColors.primaryDark,
                               ),
                             ],
                           ),
@@ -1139,40 +1186,40 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
 
                   const SizedBox(height: 36),
 
-                  // Tombol "Lupa PIN"
-                  TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: AppColors.primary,
-                          behavior: SnackBarBehavior.floating,
-                          content: Text(
-                            'Kode OTP pemulihan PIN dikirim ke ${widget.phoneNumber}',
-                          ),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'Lupa PIN',
+                  // Kirim Ulang OTP / Countdown
+                  if (_resendCountdown > 0)
+                    Text(
+                      'Kirim ulang kode dalam 00:${_resendCountdown.toString().padLeft(2, '0')}',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12.5,
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    )
+                  else
+                    TextButton(
+                      onPressed: _resendOtp,
+                      child: Text(
+                        'Kirim Ulang Kode OTP',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
           ),
 
-          // Area Bawah: Custom Numpad (Sesuai Layout Keyboard Angka Referensi)
+          // Area Bawah: Custom Numpad
           _PinNumericKeypad(
             onDigitPressed: _onDigitPressed,
             onBackspace: _onBackspace,
             onSubmit: () {
-              if (_pin.isNotEmpty) {
-                widget.onPinVerified();
+              if (_otp.length == 6) {
+                widget.onOtpVerified();
               }
             },
           ),
@@ -1181,6 +1228,9 @@ class _PinVerificationScreenState extends State<PinVerificationScreen> {
     );
   }
 }
+
+/// Alias kompatibilitas jika dibutuhkan
+typedef PinVerificationScreen = OtpVerificationScreen;
 
 class _CircularOutlinedBackButton extends StatelessWidget {
   const _CircularOutlinedBackButton({required this.onTap});

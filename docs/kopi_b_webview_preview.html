@@ -81,7 +81,7 @@
         <button data-scr="splash" onclick="setScreen('splash')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">1. Splash Screen</button>
         <button data-scr="welcome" onclick="setScreen('welcome')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">2. Onboarding (Screen 1)</button>
         <button data-scr="phone" onclick="setScreen('phone')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">3. Masuk No. HP (Screen 2)</button>
-        <button data-scr="pin" onclick="setScreen('pin')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">4. PIN Kopi B (Screen 3)</button>
+        <button data-scr="pin" onclick="setScreen('pin')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">4. Kode OTP (Screen 3)</button>
         <button data-scr="home" onclick="setScreen('home')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">5. Home Screen</button>
         <button data-scr="menu" onclick="setScreen('menu')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">6. Menu & Custom</button>
         <button data-scr="order" onclick="setScreen('order')" class="scr-pill px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition">7. Order Tracker</button>
@@ -507,7 +507,7 @@
       `;
     }
 
-    // ─── SCREEN 4: PIN KOPI B (Referensi #3) ─────────────────────────────────
+    // ─── SCREEN 4: VERIFIKASI KODE OTP (Referensi #3) ────────────────────────
     function pressPinDigit(d) {
       if (state.pinInput.length >= 6) return;
       state.pinInput += d;
@@ -524,6 +524,7 @@
 
     function renderPinScreen() {
       const len = state.pinInput.length;
+      const phoneDisplay = state.phoneInput ? `+62 ${state.phoneInput}` : '+62 81234567890';
       return `
         <div class="w-full h-full flex flex-col bg-white justify-between">
           <div>
@@ -533,38 +534,40 @@
               <button onclick="setScreen('phone')" class="w-7 h-7 rounded-full border-[1.5px] flex items-center justify-center font-bold text-sm" style="border-color:#05452E; color:#05452E;">
                 ‹
               </button>
-              <span class="font-semibold text-base" style="color:#05452E;">PIN Kopi B</span>
+              <span class="font-semibold text-base" style="color:#05452E;">Kode OTP</span>
               <span class="w-7"></span>
             </div>
 
             <div class="px-7 pt-8 text-center">
-              <h2 class="font-semibold text-base" style="color:#05452E;">Masukkan PIN</h2>
+              <h2 class="font-bold text-base" style="color:#05452E;">Masukkan Kode OTP</h2>
               <p class="text-xs mt-3 leading-relaxed" style="color:#4A6B5D;">
-                Masukkan nomor PIN yang kamu daftarkan pada aplikasi<br/>Kopi B
+                Masukkan 6 digit kode OTP yang kami kirimkan ke nomor<br/>
+                <b style="color:#0D6B4C;">${phoneDisplay}</b>
               </p>
 
-              <!-- 6 PIN Underlines with Vertical Green Blinking Cursor -->
-              <div class="mt-10 grid grid-cols-6 gap-2.5 px-1">
+              <!-- 6 OTP Underlines with Actual Digits & Vertical Green Blinking Cursor -->
+              <div class="mt-10 grid grid-cols-6 gap-2 px-1">
                 ${[0, 1, 2, 3, 4, 5].map(i => {
-                  const filled = i < len;
+                  const digit = state.pinInput[i] || '';
+                  const isFilled = i < len;
                   const current = i === len;
                   return `
                     <div class="flex flex-col items-center">
                       <div class="h-9 flex items-center justify-center">
-                        ${filled
-                          ? '<span class="w-3 h-3 rounded-full" style="background:#05452E;"></span>'
-                          : (current ? '<span class="w-[2.2px] h-8 pin-cursor" style="background:#05452E;"></span>' : '')
+                        ${isFilled
+                          ? `<span class="font-extrabold text-xl text-[#011E13]">${digit}</span>`
+                          : (current ? '<span class="w-[2.2px] h-7 pin-cursor" style="background:#05452E;"></span>' : '')
                         }
                       </div>
-                      <div class="w-full mt-1" style="height:${current ? '2.4px' : '1.5px'}; background:#05452E;"></div>
+                      <div class="w-full mt-1" style="height:${current ? '2.4px' : '1.5px'}; background:${isFilled ? '#0D6B4C' : '#05452E'};"></div>
                     </div>
                   `;
                 }).join('')}
               </div>
 
-              <button onclick="state.pinInput='123456'; render(); setTimeout(()=>setScreen('home'), 250);" class="mt-9 text-xs font-bold" style="color:#0D6B4C;">
-                Lupa PIN
-              </button>
+              <div class="mt-8">
+                <span class="text-xs text-[#55605B]">Kirim ulang kode dalam <b style="color:#0D6B4C;">00:48</b></span>
+              </div>
             </div>
           </div>
 
@@ -588,122 +591,172 @@
       `;
     }
 
-    // ─── SCREEN 5: HOME SCREEN ───────────────────────────────────────────────
+    // ─── SCREEN 5: HOME SCREEN (Fore Coffee Style Adapted for Kopi B) ────────
     function renderHomeScreen() {
-      const progressPct = Math.round((state.bBeans / 200) * 100);
       return `
         <div class="w-full h-full flex flex-col bg-white overflow-hidden">
-          <div class="flex-1 overflow-y-auto no-scrollbar">
-            <!-- Botanical Green Hero Header -->
-            <div class="rounded-b-[28px] pb-5 px-4" style="background:linear-gradient(135deg,#05452E 0%,#0D6B4C 60%,#117E5A 100%);">
-              ${renderStatusBar(true)}
-              <div class="flex items-center justify-between mt-1">
-                <img src="${transparentLogoDataUrl}" alt="Kopi B" class="h-10 object-contain" />
-                <span class="px-2.5 py-1 rounded-full text-xs font-semibold border" style="background:rgba(179,254,219,0.16); color:#B3FEDB; border-color:rgba(179,254,219,0.35);">
-                  🌱 Botanical Brewer
-                </span>
-              </div>
-              <h2 class="text-white font-bold text-lg mt-3">Selamat sore, Raka 👋</h2>
-              <p class="text-xs opacity-90" style="color:#E2F5F2;">Siap menikmati seduhan #kopiyangbaik hari ini?</p>
+          <div class="flex-1 overflow-y-auto no-scrollbar pb-3">
+            <!-- 1. Top Hero Carousel Banner (Tumbler Accessories Promo) -->
+            <div class="relative w-full h-[230px] bg-[#E8ECEB] overflow-hidden">
+              ${renderStatusBar(false)}
 
-              <!-- B-Beans Loyalty Card -->
-              <div onclick="setScreen('reward')" class="mt-4 p-3.5 rounded-2xl cursor-pointer shadow-sm" style="background:#E2F5F2;">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm" style="background:#0D6B4C; color:#B3FEDB;">★</div>
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold text-base" style="color:#011E13;">${state.bBeans} B-Beans</span>
-                        <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#05452E;">3 Voucher</span>
-                      </div>
-                      <div class="text-xs" style="color:#4A6B5D;">${200 - state.bBeans} B-Beans lagi menuju Free Cup Signature!</div>
-                    </div>
+              <!-- Bell Icon di Kanan Atas -->
+              <button class="absolute top-9 right-4 w-9 h-9 rounded-full bg-neutral-900/80 text-white flex items-center justify-center text-sm shadow-md z-10">
+                🔔
+              </button>
+
+              <!-- Studio Tumbler Banner Visual -->
+              <div class="px-5 pt-3 flex items-center justify-between">
+                <div class="w-44 z-10">
+                  <div class="text-[17px] font-extrabold text-[#1E2421] leading-tight">
+                    Tambah <sup class="text-xs">Rp</sup><b class="text-lg">10</b><sup class="text-xs">K</sup><br/>
+                    dapat <i class="text-[#8B2B1B] font-serif">extra</i> aksesoris<br/>
+                    tumbler Kopi B
                   </div>
-                  <span class="font-bold" style="color:#0D6B4C;">›</span>
+                  <p class="text-[9.5px] text-[#4A5550] mt-1.5 leading-snug">
+                    dengan pembelian 1 tumbler Color for Everyone #kopiyangbaik
+                  </p>
+                  <span class="text-[8px] text-[#85938D] mt-2 block">S&amp;K Berlaku</span>
                 </div>
-                <div class="w-full h-1.5 rounded-full mt-3 overflow-hidden" style="background:#D8EFE7;">
-                  <div class="h-full rounded-full" style="width:${progressPct}%; background:#0D6B4C;"></div>
+
+                <!-- 6 Pastel Tumblers Grid -->
+                <div class="grid grid-cols-3 gap-1.5 opacity-90 scale-95 mr-[-8px]">
+                  <div class="w-7 h-16 rounded-lg bg-[#E5E2FA] relative overflow-hidden shadow-2xs"><div class="absolute bottom-0 w-full h-7 bg-[#8B82B5]"></div></div>
+                  <div class="w-7 h-16 rounded-lg bg-[#DEEBC4] relative overflow-hidden shadow-2xs"><div class="absolute bottom-0 w-full h-7 bg-[#ADC288]"></div></div>
+                  <div class="w-7 h-16 rounded-lg bg-[#165448] relative overflow-hidden shadow-2xs"><div class="absolute bottom-0 w-full h-7 bg-[#38B2A1]"></div></div>
+                  <div class="w-7 h-16 rounded-lg bg-[#F7D1D5] relative overflow-hidden shadow-2xs"><div class="absolute bottom-0 w-full h-7 bg-[#E29199]"></div></div>
+                  <div class="w-7 h-16 rounded-lg bg-[#E27546] relative overflow-hidden shadow-2xs"><div class="absolute bottom-0 w-full h-7 bg-[#B54D22]"></div></div>
+                  <div class="w-7 h-16 rounded-lg bg-[#7A4A35] relative overflow-hidden shadow-2xs"><div class="absolute bottom-0 w-full h-7 bg-[#4C2A1C]"></div></div>
                 </div>
+              </div>
+
+              <!-- Carousel 4 Dots -->
+              <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                <span class="w-3.5 h-1.5 rounded-full bg-[#0D6B4C]"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-neutral-400"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-neutral-400"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-neutral-400"></span>
               </div>
             </div>
 
-            <!-- Toggle Pick Up vs Delivery & Outlet Card -->
-            <div class="px-4 mt-4">
-              <div class="p-3 rounded-2xl border shadow-2xs" style="background:#F4FCF9; border-color:rgba(130,187,172,0.4);">
-                <div class="p-1 rounded-full flex" style="background:#D8EFE7;">
-                  ${['Pick Up', 'Delivery'].map(m => {
-                    const active = state.orderMode === m;
-                    return `
-                      <button onclick="state.orderMode='${m}'; render();" class="flex-1 py-2 rounded-full text-xs font-bold transition ${active ? 'text-white shadow-2xs' : ''}" style="${active ? 'background:#0D6B4C;' : 'color:#05452E;'}">
-                        ${m === 'Pick Up' ? '🏪 Pick Up' : '🛵 Delivery'}
-                      </button>
-                    `;
-                  }).join('')}
-                </div>
-                <div class="mt-2.5 flex items-center justify-between px-1">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#E2F5F2; color:#0D6B4C;">📍</div>
-                    <div>
-                      <div class="flex items-center gap-1.5">
-                        <span class="font-semibold text-xs" style="color:#011E13;">${state.outletName}</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#05452E;">${state.outletDist}</span>
-                      </div>
-                      <div class="text-xs" style="color:#4A6B5D;">Siap diambil dalam ~5 menit • Tanpa antre</div>
-                    </div>
+            <!-- 2. Floating Welcome Card -->
+            <div class="px-4 -mt-5 relative z-20">
+              <div class="bg-white rounded-2xl p-3.5 shadow-[0_6px_20px_rgba(0,0,0,0.08)] border border-neutral-100">
+                <div class="flex items-center justify-between pb-2.5">
+                  <div>
+                    <h3 class="font-extrabold text-[15px] text-[#011E13]">Welcome to Kopi B!</h3>
+                    <p class="text-[10px] text-[#0D6B4C] font-semibold">#kopiyangbaik</p>
                   </div>
-                  <span onclick="setScreen('menu')" class="text-xs font-bold cursor-pointer" style="color:#0D6B4C;">Menu ›</span>
+                  <button onclick="setScreen('welcome')" class="px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-xs" style="background:#0D6B4C;">
+                    Login Sekarang
+                  </button>
+                </div>
+                <div class="border-t border-dashed border-[#E2E7E4] pt-2">
+                  <p class="text-xs text-[#55605B]">Berbagai rasa siap menemani harimu</p>
                 </div>
               </div>
             </div>
 
-            <!-- Weekly Promo Banner -->
-            <div class="px-4 mt-4">
-              <div class="p-4 rounded-2xl text-white flex items-center justify-between" style="background:#0D6B4C;">
-                <div>
-                  <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">PROMO #KOPIYANGBAIK</span>
-                  <h3 class="font-bold text-sm mt-2 leading-snug">Aren &amp; Oat Series Hemat 30%</h3>
-                  <p class="text-xs opacity-85 mt-0.5">Otomatis terpasang di keranjangmu</p>
+            <!-- 3. Section: "Pesan Kopi B Sekarang?" (Pick Up vs Delivery) -->
+            <div class="px-4 mt-5">
+              <h3 class="font-extrabold text-sm text-[#011E13] mb-2.5">Pesan Kopi B Sekarang?</h3>
+              <div class="grid grid-cols-2 gap-3">
+                <!-- Pick Up Card -->
+                <div onclick="state.orderMode='Pick Up'; setScreen('menu');" class="h-28 p-3 rounded-2xl border-[1.2px] bg-[#F7FCF9] border-[#0D6B4C]/35 relative cursor-pointer shadow-2xs hover:opacity-95">
+                  <h4 class="font-extrabold text-sm text-[#0D6B4C]">Pick Up</h4>
+                  <p class="text-[10px] text-[#55605B] mt-1 w-20 leading-tight">Ambil di store tanpa antri</p>
+                  <!-- Barista Illustration -->
+                  <div class="absolute right-1 bottom-1 w-12 h-14 flex items-center justify-center">
+                    <span class="text-2xl">👩‍🍳</span>
+                  </div>
                 </div>
-                <button onclick="setScreen('menu')" class="px-3 py-1.5 rounded-lg text-xs font-bold shrink-0" style="background:#D8EFE7; color:#05452E;">
-                  Pesan
-                </button>
+
+                <!-- Delivery Card -->
+                <div onclick="state.orderMode='Delivery'; setScreen('menu');" class="h-28 p-3 rounded-2xl border-[1.2px] bg-[#FDFBF7] border-[#E8D4BE] relative cursor-pointer shadow-2xs hover:opacity-95">
+                  <h4 class="font-extrabold text-sm text-[#8C5828]">Delivery</h4>
+                  <p class="text-[10px] text-[#55605B] mt-1 w-20 leading-tight">Garansi tepat waktu, dijamin!</p>
+                  <!-- Courier on Scooter -->
+                  <div class="absolute right-1 bottom-1 w-12 h-14 flex items-center justify-center">
+                    <span class="text-2xl">🛵</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Best Seller Section -->
-            <div class="px-4 mt-5 pb-4">
+            <!-- 4. Section: "Spesial Untukmu di Kopi B" (2x2 Grid) -->
+            <div class="px-4 mt-6 relative">
+              <h3 class="font-extrabold text-sm text-[#011E13] mb-3">Spesial Untukmu di Kopi B</h3>
+
+              <div class="grid grid-cols-2 gap-3">
+                <!-- Card 1: My Kopi B Plan -->
+                <div onclick="setScreen('reward')" class="p-3.5 rounded-2xl border border-[#E8EDE9] bg-white flex flex-col items-center text-center shadow-2xs cursor-pointer">
+                  <span class="text-2xl mb-1.5">☕✨</span>
+                  <h5 class="font-bold text-xs text-[#1E2421]">My Kopi B Plan</h5>
+                  <p class="text-[10px] text-[#6E7873] mt-0.5 leading-snug">Berlangganan jauh lebih untung</p>
+                </div>
+
+                <!-- Card 2: Kopi B Essentials (Badge Baru) -->
+                <div onclick="setScreen('reward')" class="p-3.5 rounded-2xl border border-[#E8EDE9] bg-white flex flex-col items-center text-center shadow-2xs cursor-pointer relative overflow-hidden">
+                  <span class="absolute top-0 right-0 px-2 py-0.5 rounded-bl-lg bg-[#C04E35] text-white font-extrabold text-[8px]">Baru</span>
+                  <span class="text-2xl mb-1.5">🍶🌱</span>
+                  <h5 class="font-bold text-xs text-[#1E2421]">Kopi B Essentials</h5>
+                  <p class="text-[10px] text-[#6E7873] mt-0.5 leading-snug">Bawa minumanmu dengan gaya baru</p>
+                </div>
+
+                <!-- Card 3: Katering & Rombongan -->
+                <div onclick="setScreen('menu')" class="p-3.5 rounded-2xl border border-[#E8EDE9] bg-white flex flex-col items-center text-center shadow-2xs cursor-pointer">
+                  <span class="text-2xl mb-1.5">📦☕</span>
+                  <h5 class="font-bold text-xs text-[#1E2421]">Katering &amp; Kantor</h5>
+                  <p class="text-[10px] text-[#6E7873] mt-0.5 leading-snug">Pesan banyak lebih hemat &amp; praktis</p>
+                </div>
+
+                <!-- Card 4: Stamp & Rewards -->
+                <div onclick="setScreen('reward')" class="p-3.5 rounded-2xl border border-[#E8EDE9] bg-white flex flex-col items-center text-center shadow-2xs cursor-pointer">
+                  <span class="text-2xl mb-1.5">🎁⭐</span>
+                  <h5 class="font-bold text-xs text-[#1E2421]">Stamp &amp; Rewards</h5>
+                  <p class="text-[10px] text-[#6E7873] mt-0.5 leading-snug">Kumpulkan stamp untuk kopi gratis</p>
+                </div>
+              </div>
+
+              <!-- Floating Sticker NEW! KOPI B -->
+              <div class="absolute -right-1 bottom-14 w-12 h-12 rounded-full bg-[#14533C] text-white border-2 border-white shadow-md flex flex-col items-center justify-center z-10">
+                <span class="text-[7.5px] font-extrabold text-[#28E5A7]">NEW!</span>
+                <span class="text-[7px] font-bold tracking-tight">KOPI B</span>
+              </div>
+            </div>
+
+            <!-- 5. Menu Favorit Shortcut -->
+            <div class="px-4 mt-6">
               <div class="flex items-center justify-between mb-2.5">
-                <div>
-                  <h3 class="font-bold text-sm" style="color:#011E13;">Paling Favorit 🌱</h3>
-                  <p class="text-xs" style="color:#4A6B5D;">Racikan artisanal paling dicintai minggu ini</p>
-                </div>
-                <button onclick="setScreen('menu')" class="text-xs font-bold" style="color:#0D6B4C;">Lihat Semua</button>
+                <h3 class="font-extrabold text-sm text-[#011E13]">Paling Favorit Hari Ini 🌱</h3>
+                <button onclick="setScreen('menu')" class="text-xs font-bold text-[#0D6B4C]">Lihat Semua</button>
               </div>
 
-              <div class="space-y-2.5">
-                ${state.products.slice(0, 4).map(p => `
-                  <div onclick="openCustomizer('${p.id}')" class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition hover:opacity-95" style="background:#E2F5F2; border-color:rgba(130,187,172,0.4);">
-                    <div class="w-16 h-16 rounded-xl bg-white flex flex-col items-center justify-center shrink-0 border relative" style="border-color:rgba(130,187,172,0.35);">
-                      <div class="w-7 h-10 rounded-b-md border-t-4 border-white shadow-xs flex items-center justify-center" style="background:${p.color};">
-                        <span class="w-4 h-3 rounded-xs" style="background:#0D6B4C;"></span>
-                      </div>
-                      <span class="absolute bottom-1 right-1 text-xs">🌱</span>
+              <div class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+                ${state.products.slice(0, 3).map(p => `
+                  <div onclick="openCustomizer('${p.id}')" class="w-36 p-2.5 rounded-xl border border-[#82BBAC]/35 bg-[#E2F5F2] flex flex-col justify-between shrink-0 cursor-pointer">
+                    <div class="w-12 h-12 rounded-lg bg-white mx-auto flex items-center justify-center">
+                      <div class="w-5 h-8 rounded-b bg-[#C68B59] border-t-2 border-white"></div>
                     </div>
-                    <div class="flex-1 min-w-0">
-                      <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:#B3FEDB; color:#011E13;">${p.badge}</span>
-                      <h4 class="font-semibold text-sm mt-1 truncate" style="color:#011E13;">${p.name}</h4>
-                      <p class="text-xs truncate" style="color:#4A6B5D;">${p.desc}</p>
-                      <div class="flex items-center gap-2 mt-1">
-                        <span class="font-bold text-xs" style="color:#0D6B4C;">${formatRp(p.price)}</span>
-                        <span class="text-xs" style="color:#4A6B5D;">• ${p.cal} kkal</span>
-                      </div>
+                    <div class="mt-2">
+                      <div class="font-bold text-xs text-[#011E13] truncate">${p.name}</div>
+                      <div class="text-[10px] text-[#4A6B5D]">${p.cal} kkal</div>
                     </div>
-                    <button class="w-8 h-8 rounded-full text-white font-bold flex items-center justify-center shrink-0" style="background:#0D6B4C;">+</button>
+                    <div class="flex items-center justify-between mt-2">
+                      <span class="font-extrabold text-xs text-[#0D6B4C]">${formatRp(p.price)}</span>
+                      <button class="w-6 h-6 rounded-full bg-[#0D6B4C] text-white font-bold text-xs flex items-center justify-center">+</button>
+                    </div>
                   </div>
                 `).join('')}
               </div>
             </div>
           </div>
+
+          ${renderBottomNav('home')}
+          ${renderModals()}
+        </div>
+      `;
+    }
 
           ${renderBottomNav('home')}
           ${renderModals()}

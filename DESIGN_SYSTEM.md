@@ -154,12 +154,20 @@ Bottom navigation persisten terdiri dari **5 destinasi utama** yang dirancang un
 1. **Welcome & Auth Onboarding Flow (3 Screens — `lib/features/auth/auth_onboarding_screens.dart`):**
    - **Screen 1 (`WelcomeOnboardingScreen`):** Showcase komposisi produk *Kopi B* (2 Iced Coffee Cups berlogo Kopi B + 2 Artisanal Bomboloni Donuts) di atas latar studio bersih, indikator 3 titik (`• • •`), judul hijau `#0D6B4C` *"Semua Favoritmu dalam Satu Aplikasi"*, subjudul *"Praktis pesan kopi dan pastry di Kopi B App!"*, pemilih bahasa pill (`🇮🇩 Indonesia ⌄`), CTA pill penuh **"Masuk"** (`#0D6B4C`), dan tombol **"Lewati tahap ini"** yang langsung mengarah ke **Home Screen**.
    - **Screen 2 (`PhoneLoginScreen`):** Header dengan tombol *back* lingkaran hijau *outlined* (`<`) dan judul **"Masuk"**, label *"Masukkan no telepon"*, pemilih kode negara `+62 ⌄` + field nomor telepon `81234567890`, tombol **"Lanjutkan"** (otomatis berubah dari *disabled grey* `#C5C7C6` menjadi `Primary #0D6B4C` saat nomor valid), serta *disclaimer* **Syarat & Ketentuan** dan **Kebijakan Privasi**.
-   - **Screen 3 (`PinVerificationScreen`):** Header **"PIN Kopi B"**, instruksi *"Masukkan PIN — Masukkan nomor PIN yang kamu daftarkan pada aplikasi Kopi B"*, **6 garis bawah PIN** (`_ _ _ _ _ _`) dengan kursor vertikal hijau berkedip (`|`), tombol **"Lupa PIN"**, dan *custom numeric keypad* modern di bagian bawah yang otomatis memverifikasi dan membuka **Home Screen** saat 6 digit terisi.
-2. **Home Screen:**
-   - Header sapaan personal + ringkasan kartu **B-Beans** & Voucher aktif.
-   - Selector metode pemesanan: Toggle interaktif **Pick Up** (ambil di outlet terdekat) vs **Delivery** (antar ke lokasi).
-   - Carousel banner promo mingguan (`16px` radius).
-   - Section **Best Seller** & **Rekomendasi Hari Ini** dengan tombol cepat `+` (*Quick Add*).
+   - **Screen 3 (`OtpVerificationScreen`):** Header **"Kode OTP"**, instruksi *"Masukkan Kode OTP — Masukkan 6 digit kode OTP yang kami kirimkan ke nomor +62 ..."*, **6 garis bawah OTP** (`_ _ _ _ _ _`) dengan angka OTP yang diketik & kursor vertikal hijau berkedip (`|`), teks hitung mundur *"Kirim ulang kode dalam 00:59"*, dan *custom numeric keypad* modern di bagian bawah yang otomatis memverifikasi dan membuka **Home Screen** saat 6 digit terisi.
+2. **Home Screen (`lib/features/home/home_screen.dart`):**
+   - **Hero Carousel Banner Atas:** Showcase promosi aksesoris tumbler Kopi B (#kopiyangbaik) dan promo mingguan dengan tombol notifikasi bel di sudut kanan atas.
+   - **Floating Welcome Card:** Kartu melayang *"Welcome to Kopi B!"* dengan tombol aksi *"Login Sekarang"* (membuka alur pendaftaran/masuk) dan pemisah garis putus-putus (*dashed line*).
+   - **Pesan Kopi B Sekarang?:** Dua kartu pilihan sejajar:
+     - **Pick Up:** Aksen Deep Forest Green (`#0D6B4C`), subtitle *"Ambil di store tanpa antri"*, dan ilustrasi barista Kopi B.
+     - **Delivery:** Aksen Terracotta Brown (`#8C5828`), subtitle *"Garansi tepat waktu, dijamin!"*, dan ilustrasi kurir skuter Kopi B.
+   - **Spesial Untukmu di Kopi B (Grid 2x2):**
+     1. *My Kopi B Plan* (Langganan hemat)
+     2. *Kopi B Essentials* (Eco-tumbler dengan badge merah *"Baru"*)
+     3. *Katering & Kantor* (Pemesanan banyak untuk event)
+     4. *Stamp & Rewards* (Game stamp loyalitas 8-cup)
+     - Dilengkapi stiker badge melayang *"NEW! KOPI B"*.
+   - **Paling Favorit Hari Ini:** Pintasan horizontal kartu produk Best Seller (#kopiyangbaik) dengan tombol *Quick Add* (`+`).
 3. **Menu Screen:**
    - Search bar di bagian atas + chip filter cepat.
    - Navigasi kategori kopi interaktif (*Signature Kopi B*, *Espresso Based*, *Non-Coffee*, *Oat Series*, *Pastry*).
