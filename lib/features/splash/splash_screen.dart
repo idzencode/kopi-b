@@ -106,12 +106,12 @@ class _SplashScreenState extends State<SplashScreen>
                           fit: BoxFit.contain,
                           filterQuality: FilterQuality.high,
                         ),
-                        const SizedBox(height: 0.5),
+                        const SizedBox(height: 0.1),
                         Text(
                           '#kopiyangbaik',
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w400,
                             color: Colors.white,
                             letterSpacing: 0.2,
                           ),
