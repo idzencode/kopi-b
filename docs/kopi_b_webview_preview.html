@@ -44,14 +44,14 @@
       animation: blinkCursor 1s infinite;
     }
 
-    /* Animasi Splash Screen Kopi B: dari besar (1.75x) ke kecil/normal (1.0x) */
-    @keyframes splashZoomOut {
-      0% { opacity: 0; transform: scale(1.75); }
-      35% { opacity: 0.85; }
+    /* Animasi Splash Screen Kopi B: dari kecil (0.60x) ke besar/normal (1.0x) */
+    @keyframes splashScaleUp {
+      0% { opacity: 0; transform: scale(0.60); }
+      40% { opacity: 0.85; }
       100% { opacity: 1; transform: scale(1.0); }
     }
     .splash-logo-anim {
-      animation: splashZoomOut 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: splashScaleUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
   </style>
 </head>
@@ -311,8 +311,9 @@
       return `
         <div onclick="setScreen('home')" class="splash-wave-bg w-full h-full flex flex-col justify-between cursor-pointer">
           ${renderStatusBar(true)}
-          <div class="flex-1 flex flex-col items-center justify-center px-8 z-10">
-            <img src="../assets/images/logo.png" onerror="this.src=transparentLogoDataUrl" alt="Kopi B Logo" class="w-48 object-contain splash-logo-anim drop-shadow-sm" />
+          <div class="flex-1 flex flex-col items-center justify-center px-8 z-10 splash-logo-anim">
+            <img src="../assets/images/logo.png" onerror="this.src=transparentLogoDataUrl" alt="Kopi B Logo" class="w-40 object-contain drop-shadow-sm" />
+            <div class="mt-3.5 text-white font-semibold text-base tracking-wider">#kopiyangbaik</div>
           </div>
           <div class="pb-6 text-center z-10">
             <span class="text-xs text-white/70">Ketuk layar atau tunggu otomatis ke Home Screen...</span>
@@ -1241,7 +1242,7 @@
 
     function updateFlowInfo() {
       const descriptions = {
-        splash: '<b>1. Splash Screen:</b> Gradien gelombang hijau zamrud diagonal dengan logo resmi <code>assets/images/logo.png</code> dan <b>animasi dari besar (1.75x) ke kecil (1.0x)</b>. Otomatis berpindah langsung ke Home Screen setelah 2.6 detik.',
+        splash: '<b>1. Splash Screen:</b> Gradien gelombang hijau zamrud diagonal dengan Logo B, tulisan <b>#kopiyangbaik</b>, dan <b>animasi dari kecil (0.60x) ke besar (1.0x)</b>. Otomatis berpindah langsung ke Home Screen setelah 2.6 detik.',
         home: '<b>2. Home Screen:</b> Tampilan utama aplikasi Kopi B setelah splash screen. Dilengkapi banner promo Fore-style, Welcome Card dengan tombol "Login Sekarang", Pick Up & Delivery, dan Best Sellers (tanpa floating bar).',
         welcome: '<b>3. Masuk / Daftar (Screen 1):</b> Tampil saat pengguna klik "Login Sekarang" di Home. Komposisi cup es kopi berlogo Kopi B + donat/pastry, indikator 3 titik, pemilih bahasa Indonesia, tombol "Masuk", dan "Lewati tahap ini".',
         menu: '<b>6. Menu Screen:</b> Pencarian, filter kategori, kustomisasi minuman (Es/Panas, Level Gula, Oat Milk), dan Floating Cart.',

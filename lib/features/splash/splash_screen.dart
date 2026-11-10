@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Splash Screen "Kopi B" (#kopiyangbaik)
 /// Mengadopsi estetika organik Fore Coffee dengan gelombang cahaya diagonal
-/// Deep Forest Green (#0D6B4C) dan logo putih Kopi B di bagian tengah layar.
+/// Deep Forest Green (#0D6B4C), Logo B, dan tulisan #kopiyangbaik di bawahnya.
+/// Animasi bergerak dari kecil (0.60x) ke besar (1.0x).
 class SplashScreen extends StatefulWidget {
   const SplashScreen({
     super.key,
@@ -33,21 +35,19 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1300),
+      duration: const Duration(milliseconds: 1200),
     );
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.65, curve: Curves.easeIn),
+      curve: const Interval(0.0, 0.70, curve: Curves.easeOut),
     );
 
-    // Animasi logo dari besar (1.75x) ke ukuran normal (1.0x) dengan kurva melambat halus
-    _scaleAnimation = Tween<double>(begin: 1.75, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    // Animasi logo & teks dari kecil (0.60x) ke ukuran penuh (1.0x) dengan kurva melambat halus
+    _scaleAnimation = Tween<double>(
+      begin: 0.60,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
 
@@ -70,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final logoWidth = (screenWidth * 0.52).clamp(180.0, 240.0);
+    final logoWidth = (screenWidth * 0.46).clamp(160.0, 210.0);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -89,21 +89,34 @@ class _SplashScreenState extends State<SplashScreen>
             fit: StackFit.expand,
             children: [
               // 1. Latar Belakang Gelombang Silky Diagonal khas Fore / Kopi B
-              const CustomPaint(
-                painter: _SilkyForestWavePainter(),
-              ),
+              const CustomPaint(painter: _SilkyForestWavePainter()),
 
-              // 2. Logo Kopi B (assets/images/logo.png) di Tengah Layar dengan Animasi Besar ke Kecil
+              // 2. Logo B & Tulisan #kopiyangbaik di Tengah Layar (Animasi Kecil -> Besar)
               Center(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: ScaleTransition(
                     scale: _scaleAnimation,
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: logoWidth,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/logo.png',
+                          width: logoWidth,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
+                        const SizedBox(height: 0.5),
+                        Text(
+                          '#kopiyangbaik',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -238,4 +251,3 @@ class _SilkyForestWavePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
