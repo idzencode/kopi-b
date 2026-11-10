@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500),
     );
 
     _fadeAnimation = CurvedAnimation(
@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Animasi logo & teks dari kecil (0.60x) ke ukuran penuh (1.0x) dengan kurva melambat halus
     _scaleAnimation = Tween<double>(
       begin: 0.60,
-      end: 1.0,
+      end: 1.30,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
@@ -111,7 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
                           '#kopiyangbaik',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 40,
-                            fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w800,
                             color: Colors.white,
                             letterSpacing: 0.2,
                           ),
